@@ -11,14 +11,15 @@ require('dotenv').config();
 
 app.use(express.json());
 app.use(express.static('public'));
-// Routes
+
+// API Routes
 app.use('/api/products', require('./routes/products'));
 app.use('/api/employees', employeeRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/loyalty', loyaltyRoutes);
 
 // Health check
-app.get('/', (req, res) => res.send('POS API is running'));
+app.get('/', (req, res) => res.json({ message: 'POS API is running', status: 'active' }));
 
 const PORT = process.env.PORT || 3000;
 const pool = require('./db');
@@ -30,4 +31,5 @@ pool.query('SELECT NOW()', (err, res) => {
     console.log('Database connected successfully at:', res.rows[0].now);
   }
 });
+
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
