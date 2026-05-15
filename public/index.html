@@ -3,574 +3,252 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>POS System — Products</title>
+  <title>POS System — Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #f7f5f0;
-      --surface: #ffffff;
-      --surface2: #f0ede6;
-      --border: #e2ddd5;
-      --text: #1a1814;
-      --muted: #6b6760;
-      --accent: #1a1814;
-      --green: #2d6a4f;
-      --red: #9b2226;
-      --green-bg: #d8f3dc;
-      --red-bg: #fde8e8;
-      --amber: #854f0b;
-      --amber-bg: #faeeda;
-      --mono: 'DM Mono', monospace;
-      --sans: 'Syne', sans-serif;
-    }
-
-    body {
-      font-family: var(--sans);
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
-
-    /* ── Header ── */
-    header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 0 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 56px;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-    .logo {
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .logo span { opacity: 0.35; margin: 0 6px; }
-    .header-meta {
-      font-size: 12px;
-      color: var(--muted);
-      font-family: var(--mono);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .dot {
-      display: inline-block;
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--green);
-    }
-
-    /* ── Layout ── */
-    main {
-      padding: 2rem;
+    .dashboard-grid {
       display: grid;
-      grid-template-columns: 1fr 340px;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 1.5rem;
-      align-items: start;
-      max-width: 1200px;
-      margin: 0 auto;
+      margin: 2rem 0;
     }
-
-    /* ── Panel ── */
-    .panel {
+    .dashboard-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-    }
-    .panel-header {
-      padding: 1rem 1.25rem;
-      border-bottom: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.3s ease;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
+      flex-direction: column;
+      gap: 1rem;
     }
-    .panel-title {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    /* ── Stats ── */
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1px;
-      background: var(--border);
-      border-bottom: 1px solid var(--border);
-    }
-    .stat {
-      background: var(--surface);
-      padding: 1.25rem 1.5rem;
-    }
-    .stat-label {
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-    .stat-val {
-      font-size: 26px;
-      font-weight: 600;
-      font-family: var(--mono);
-    }
-
-    /* ── Search ── */
-    .search-bar {
-      padding: 0.75rem 1.25rem;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      gap: 8px;
-    }
-    .search-bar input {
-      flex: 1;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 7px 12px;
-      font-size: 13px;
-      font-family: var(--sans);
-      background: var(--bg);
-      color: var(--text);
-      outline: none;
-      transition: border 0.15s;
-    }
-    .search-bar input:focus { border-color: #999; background: var(--surface); }
-
-    /* ── Table ── */
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    thead th {
-      padding: 10px 1.25rem;
-      text-align: left;
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
-    }
-    tbody tr {
-      border-bottom: 0.5px solid var(--border);
-      transition: background 0.1s;
-    }
-    tbody tr:hover { background: var(--surface2); }
-    tbody tr:last-child { border-bottom: none; }
-    td { padding: 11px 1.25rem; vertical-align: middle; }
-
-    .id-cell { font-family: var(--mono); color: var(--muted); font-size: 12px; }
-    .name-cell { font-weight: 500; }
-    .price-cell { font-family: var(--mono); }
-
-    .stock-badge {
-      display: inline-block;
-      padding: 3px 9px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 500;
-      font-family: var(--mono);
-    }
-    .stock-ok  { background: var(--green-bg); color: var(--green); }
-    .stock-low { background: var(--amber-bg); color: var(--amber); }
-    .stock-out { background: var(--red-bg);   color: var(--red);   }
-
-    .action-btns { display: flex; gap: 6px; }
-    .btn {
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text);
-      border-radius: 6px;
-      padding: 5px 10px;
-      font-size: 12px;
-      font-family: var(--sans);
-      cursor: pointer;
-      transition: all 0.1s;
-      font-weight: 500;
-    }
-    .btn:hover { background: var(--surface2); }
-    .btn-danger { border-color: #e8c5c5; color: var(--red); }
-    .btn-danger:hover { background: var(--red-bg); }
-    .btn-edit { border-color: #c5d5e8; color: #185fa5; }
-    .btn-edit:hover { background: #e6f1fb; }
-
-    /* ── Status bar ── */
-    .status-bar {
-      padding: 6px 1.25rem;
+    .dashboard-card:hover {
       background: var(--surface2);
-      border-top: 1px solid var(--border);
-      font-size: 11px;
-      font-family: var(--mono);
-      color: var(--muted);
-      display: flex;
-      justify-content: space-between;
+      border-color: var(--accent);
+      transform: translateY(-4px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
-
-    /* ── Empty / error state ── */
-    .empty-state {
-      padding: 3rem;
-      text-align: center;
-      color: var(--muted);
-      font-size: 13px;
+    .dashboard-card-icon {
+      font-size: 2.5rem;
+      opacity: 0.7;
     }
-
-    /* ── Sidebar ── */
-    .sidebar { display: flex; flex-direction: column; gap: 1.5rem; }
-
-    /* ── Form ── */
-    .form-section { padding: 1.25rem; }
-    .field { margin-bottom: 14px; }
-    .field label {
-      display: block;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--muted);
-      margin-bottom: 5px;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-    .field input {
-      width: 100%;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 10px;
-      font-size: 13px;
-      font-family: var(--sans);
-      background: var(--bg);
+    .dashboard-card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
       color: var(--text);
-      outline: none;
-      transition: border 0.15s;
     }
-    .field input:focus { border-color: #999; background: var(--surface); }
-
-    .btn-primary {
-      width: 100%;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      padding: 10px;
-      font-size: 13px;
-      font-family: var(--sans);
-      font-weight: 500;
-      cursor: pointer;
-      letter-spacing: 0.04em;
-      transition: opacity 0.15s;
-    }
-    .btn-primary:hover { opacity: 0.82; }
-
-    .btn-secondary {
-      width: 100%;
-      background: transparent;
+    .dashboard-card-desc {
+      font-size: 0.9rem;
       color: var(--muted);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px;
-      font-size: 13px;
-      font-family: var(--sans);
-      cursor: pointer;
-      margin-top: 8px;
-      transition: background 0.1s;
     }
-    .btn-secondary:hover { background: var(--surface2); }
-
-    .form-mode-tag {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-family: var(--mono);
-      font-weight: 500;
+    .dashboard-card-count {
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-top: 0.5rem;
     }
-    .tag-add  { background: var(--green-bg); color: var(--green); }
-    .tag-edit { background: #e6f1fb; color: #185fa5; }
-
-    /* ── Activity log ── */
-    .log-section { padding: 1.25rem; }
-    .log-entry {
-      font-size: 12px;
-      font-family: var(--mono);
+    .dashboard-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .dashboard-header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .dashboard-header p {
+      font-size: 1.1rem;
       color: var(--muted);
-      padding: 5px 0;
-      border-bottom: 0.5px solid var(--border);
-      display: flex;
-      gap: 10px;
     }
-    .log-entry:last-child { border-bottom: none; }
-    .log-time { color: #b0aca5; min-width: 52px; }
-    .log-ok  { color: var(--green); }
-    .log-err { color: var(--red); }
-
-    /* ── Responsive ── */
-    @media (max-width: 900px) {
-      main { grid-template-columns: 1fr; }
+    .system-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin: 3rem 0 2rem 0;
+    }
+    .mini-stat {
+      background: var(--green-bg);
+      border: 1px solid var(--green);
+      border-radius: 6px;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    .mini-stat.error {
+      background: var(--red-bg);
+      border-color: var(--red);
+    }
+    .mini-stat-label {
+      font-size: 0.9rem;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+    .mini-stat-value {
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--green);
+    }
+    .mini-stat.error .mini-stat-value {
+      color: var(--red);
     }
   </style>
 </head>
 <body>
 
 <header>
-  <div class="logo">POS System <span>/</span> Products</div>
+  <div class="logo">POS System <span>/</span> Dashboard</div>
+  
+<nav>
+    <a href="index.html">Dashboard</a>
+    <a href="register.html">Register</a>
+    <a href="products.html">Products</a>
+    <a href="sales.html">Sales</a>
+    <a href="employees.html">Employees</a>
+    <a href="customers.html">Customers</a>
+    <a href="loyalty.html">Loyalty</a>
+    <a href="inventory.html">Inventory</a>
+    <a href="reports.html">Reports</a>
+    <a href="login.html">Login</a>
+  </nav>
+
   <div class="header-meta">
-    <span class="dot" id="conn-dot"></span>
+    <span class="dot" id="conn-dot" style="background: var(--green)"></span>
     <span id="conn-label">api: localhost:3000</span>
   </div>
 </header>
 
-<main>
-  <!-- Left: table -->
-  <div style="display:flex;flex-direction:column;gap:1.5rem">
-    <div class="panel">
-      <div class="stats-row">
-        <div class="stat">
-          <div class="stat-label">Total Products</div>
-          <div class="stat-val" id="s-total">—</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Total Stock</div>
-          <div class="stat-val" id="s-stock">—</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Avg Price</div>
-          <div class="stat-val" id="s-avg">—</div>
-        </div>
-      </div>
+<main class="main-single">
+  <div class="dashboard-header">
+    <h1>Welcome to POS System</h1>
+    <p>Point of Sale Management Dashboard</p>
+  </div>
 
-      <div class="search-bar">
-        <input type="text" id="search" placeholder="Search products by name…" oninput="filterTable()">
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th style="width:60px">ID</th>
-            <th>Product Name</th>
-            <th>Price (R)</th>
-            <th>Stock</th>
-            <th style="width:150px">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="table-body">
-          <tr><td colspan="5" class="empty-state">Loading products…</td></tr>
-        </tbody>
-      </table>
-
-      <div class="status-bar">
-        <span id="row-count">0 products</span>
-        <span id="last-refresh">—</span>
-      </div>
+  <div class="system-stats">
+    <div class="mini-stat" id="stat-products">
+      <div class="mini-stat-label">Total Products</div>
+      <div class="mini-stat-value" id="count-products">—</div>
+    </div>
+    <div class="mini-stat" id="stat-customers">
+      <div class="mini-stat-label">Total Customers</div>
+      <div class="mini-stat-value" id="count-customers">—</div>
+    </div>
+    <div class="mini-stat" id="stat-employees">
+      <div class="mini-stat-label">Total Employees</div>
+      <div class="mini-stat-value" id="count-employees">—</div>
+    </div>
+    <div class="mini-stat" id="stat-sales">
+      <div class="mini-stat-label">Total Sales</div>
+      <div class="mini-stat-value" id="count-sales">—</div>
     </div>
   </div>
 
-  <!-- Right: sidebar -->
-  <div class="sidebar">
+  <div class="dashboard-grid">
+    <a href="products.html" class="dashboard-card">
+      <div class="dashboard-card-icon">📦</div>
+      <div class="dashboard-card-title">Products</div>
+      <div class="dashboard-card-desc">Manage inventory and product catalog</div>
+      <div class="dashboard-card-count" id="card-products">—</div>
+    </a>
 
-    <!-- Form panel -->
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">
-          Product Form
-          <span class="form-mode-tag tag-add" id="form-tag">ADD</span>
-        </span>
-        <button class="btn" onclick="refreshProducts()" style="font-size:11px;padding:4px 10px">↻ Refresh</button>
-      </div>
-      <div class="form-section">
-        <div class="field">
-          <label>Product Name</label>
-          <input type="text" id="f-name" placeholder="e.g. Maize Meal">
-        </div>
-        <div class="field">
-          <label>Price (R)</label>
-          <input type="number" id="f-price" placeholder="0.00" step="0.01" min="0">
-        </div>
-        <div class="field">
-          <label>Stock Quantity</label>
-          <input type="number" id="f-stock" placeholder="0" min="0">
-        </div>
-        <button class="btn-primary" onclick="submitForm()" id="submit-btn">Add Product</button>
-        <button class="btn-secondary" onclick="resetForm()" id="cancel-btn" style="display:none">Cancel Edit</button>
-      </div>
-    </div>
+    <a href="customers.html" class="dashboard-card">
+      <div class="dashboard-card-icon">👥</div>
+      <div class="dashboard-card-title">Customers</div>
+      <div class="dashboard-card-desc">View and manage customer database</div>
+      <div class="dashboard-card-count" id="card-customers">—</div>
+    </a>
 
-    <!-- Activity log panel -->
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">Activity Log</span>
-      </div>
-      <div class="log-section" id="log-section">
-        <div class="log-entry">
-          <span class="log-time">--:--</span>
-          <span>Waiting for actions…</span>
-        </div>
-      </div>
-    </div>
+    <a href="employees.html" class="dashboard-card">
+      <div class="dashboard-card-icon">👔</div>
+      <div class="dashboard-card-title">Employees</div>
+      <div class="dashboard-card-desc">Manage staff and personnel records</div>
+      <div class="dashboard-card-count" id="card-employees">—</div>
+    </a>
 
+    <a href="sales.html" class="dashboard-card">
+      <div class="dashboard-card-icon">💰</div>
+      <div class="dashboard-card-title">Sales</div>
+      <div class="dashboard-card-desc">Track transactions and sales data</div>
+      <div class="dashboard-card-count" id="card-sales">—</div>
+    </a>
+
+    <a href="loyalty.html" class="dashboard-card">
+      <div class="dashboard-card-icon">🎁</div>
+      <div class="dashboard-card-title">Loyalty Program</div>
+      <div class="dashboard-card-desc">Manage customer loyalty points</div>
+      <div class="dashboard-card-count" id="card-loyalty">—</div>
+    </a>
   </div>
+
+  <div class="panel" style="margin-top: 3rem">
+    <div class="panel-header">
+      <span class="panel-title">System Status</span>
+      <button class="btn" onclick="loadDashboardData()" style="font-size:11px;padding:4px 10px">↻ Refresh</button>
+    </div>
+    <div id="status-content" style="padding: 1.5rem">
+      <p style="color: var(--muted)">Loading system status…</p>
+    </div>
+  </div>
+
 </main>
 
 <script>
-  const API = 'http://localhost:3000/api/products';
-  let allProducts = [];
-  let editingId = null;
+  const API_BASE = 'http://localhost:3000/api';
 
-  function ts() {
-    return new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  }
-
-  function log(msg, type = '') {
-    const s = document.getElementById('log-section');
-    const e = document.createElement('div');
-    e.className = 'log-entry';
-    e.innerHTML = `<span class="log-time">${ts()}</span><span class="${type ? 'log-' + type : ''}">${msg}</span>`;
-    s.prepend(e);
-    const entries = s.querySelectorAll('.log-entry');
-    if (entries.length > 10) entries[entries.length - 1].remove();
-  }
-
-  function stockClass(n) {
-    if (n === 0) return 'stock-out';
-    if (n < 20)  return 'stock-low';
-    return 'stock-ok';
-  }
-
-  function updateStats(products) {
-    document.getElementById('s-total').textContent = products.length;
-    const totalStock = products.reduce((a, p) => a + p.stock, 0);
-    document.getElementById('s-stock').textContent = totalStock.toLocaleString();
-    const avg = products.length
-      ? products.reduce((a, p) => a + parseFloat(p.price), 0) / products.length
-      : 0;
-    document.getElementById('s-avg').textContent = 'R' + avg.toFixed(2);
-  }
-
-  function renderTable(products) {
-    const tbody = document.getElementById('table-body');
-    if (!products.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No products found</td></tr>';
-      return;
-    }
-    tbody.innerHTML = products.map(p => `
-      <tr>
-        <td class="id-cell">#${p.id}</td>
-        <td class="name-cell">${p.name}</td>
-        <td class="price-cell">R${parseFloat(p.price).toFixed(2)}</td>
-        <td><span class="stock-badge ${stockClass(p.stock)}">${p.stock} units</span></td>
-        <td>
-          <div class="action-btns">
-            <button class="btn btn-edit" onclick="startEdit(${p.id})">Edit</button>
-            <button class="btn btn-danger" onclick="deleteProduct(${p.id})">Delete</button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
-    document.getElementById('row-count').textContent = `${products.length} product${products.length !== 1 ? 's' : ''}`;
-    document.getElementById('last-refresh').textContent = 'updated ' + ts();
-  }
-
-  function filterTable() {
-    const q = document.getElementById('search').value.toLowerCase();
-    const filtered = allProducts.filter(p => p.name.toLowerCase().includes(q));
-    renderTable(filtered);
-  }
-
-  async function refreshProducts() {
+  async function loadDashboardData() {
     try {
-      const r = await fetch(API);
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      allProducts = await r.json();
-      updateStats(allProducts);
-      filterTable();
-      log('Products loaded (' + allProducts.length + ')', 'ok');
+      const [products, customers, employees, sales] = await Promise.all([
+        fetch(API_BASE + '/products').then(r => r.json()).catch(() => []),
+        fetch(API_BASE + '/customers').then(r => r.json()).catch(() => []),
+        fetch(API_BASE + '/employees').then(r => r.json()).catch(() => []),
+        fetch(API_BASE + '/sales').then(r => r.json()).catch(() => [])
+      ]);
+
+      // Update counts
+      document.getElementById('count-products').textContent = products.length || '0';
+      document.getElementById('count-customers').textContent = customers.length || '0';
+      document.getElementById('count-employees').textContent = employees.length || '0';
+      document.getElementById('count-sales').textContent = sales.length || '0';
+
+      document.getElementById('card-products').textContent = (products.length || '0') + ' products';
+      document.getElementById('card-customers').textContent = (customers.length || '0') + ' customers';
+      document.getElementById('card-employees').textContent = (employees.length || '0') + ' staff';
+      document.getElementById('card-sales').textContent = (sales.length || '0') + ' transactions';
+
+      // Update status
       document.getElementById('conn-dot').style.background = 'var(--green)';
+      document.getElementById('status-content').innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem">
+          <div>
+            <strong>API Status:</strong> <span style="color: var(--green)">✓ Connected</span>
+          </div>
+          <div>
+            <strong>Database:</strong> <span style="color: var(--green)">✓ Active</span>
+          </div>
+          <div>
+            <strong>Last Updated:</strong> ${new Date().toLocaleTimeString()}
+          </div>
+          <div>
+            <strong>Server:</strong> localhost:3000
+          </div>
+        </div>
+      `;
     } catch (e) {
-      log('GET failed: ' + e.message, 'err');
       document.getElementById('conn-dot').style.background = 'var(--red)';
-      document.getElementById('table-body').innerHTML =
-        '<tr><td colspan="5" class="empty-state" style="color:var(--red)">Could not connect to API — make sure the server is running on port 3000</td></tr>';
+      document.getElementById('status-content').innerHTML = `
+        <div style="color: var(--red); padding: 1rem; background: var(--red-bg); border-radius: 6px">
+          <strong>⚠ Connection Error</strong>
+          <p>${e.message}</p>
+          <p style="font-size: 0.9rem; margin-top: 0.5rem">Make sure the backend server is running on port 3000</p>
+        </div>
+      `;
     }
   }
 
-  function startEdit(id) {
-    const p = allProducts.find(x => x.id === id);
-    if (!p) return;
-    editingId = id;
-    document.getElementById('f-name').value = p.name;
-    document.getElementById('f-price').value = parseFloat(p.price).toFixed(2);
-    document.getElementById('f-stock').value = p.stock;
-    document.getElementById('submit-btn').textContent = 'Update Product';
-    document.getElementById('cancel-btn').style.display = 'block';
-    document.getElementById('form-tag').textContent = 'EDIT';
-    document.getElementById('form-tag').className = 'form-mode-tag tag-edit';
-    document.getElementById('f-name').focus();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  function resetForm() {
-    editingId = null;
-    document.getElementById('f-name').value = '';
-    document.getElementById('f-price').value = '';
-    document.getElementById('f-stock').value = '';
-    document.getElementById('submit-btn').textContent = 'Add Product';
-    document.getElementById('cancel-btn').style.display = 'none';
-    document.getElementById('form-tag').textContent = 'ADD';
-    document.getElementById('form-tag').className = 'form-mode-tag tag-add';
-  }
-
-  async function submitForm() {
-    const name  = document.getElementById('f-name').value.trim();
-    const price = parseFloat(document.getElementById('f-price').value);
-    const stock = parseInt(document.getElementById('f-stock').value);
-    if (!name || isNaN(price) || isNaN(stock)) {
-      log('Please fill in all fields', 'err');
-      return;
-    }
-    const body = JSON.stringify({ name, price, stock });
-    try {
-      let r;
-      if (editingId) {
-        r = await fetch(API + '/' + editingId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body });
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        log('Updated: ' + name, 'ok');
-      } else {
-        r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        log('Added: ' + name, 'ok');
-      }
-      resetForm();
-      refreshProducts();
-    } catch (e) {
-      log((editingId ? 'PUT' : 'POST') + ' failed: ' + e.message, 'err');
-    }
-  }
-
-  async function deleteProduct(id) {
-    const p = allProducts.find(x => x.id === id);
-    if (!p) return;
-    if (!confirm('Delete "' + p.name + '"? This cannot be undone.')) return;
-    try {
-      const r = await fetch(API + '/' + id, { method: 'DELETE' });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      log('Deleted: ' + p.name, 'ok');
-      refreshProducts();
-    } catch (e) {
-      log('DELETE failed: ' + e.message, 'err');
-    }
-  }
-
-  refreshProducts();
+  // Load data on page load
+  loadDashboardData();
+  // Refresh every 10 seconds
+  setInterval(loadDashboardData, 10000);
 </script>
 </body>
 </html>

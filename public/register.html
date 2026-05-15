@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POS System — Register</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">POS System <span>/</span> Register</div>
+<nav>
+    <a href="index.html">Dashboard</a>
+    <a href="register.html">Register</a>
+    <a href="products.html">Products</a>
+    <a href="sales.html">Sales</a>
+    <a href="employees.html">Employees</a>
+    <a href="customers.html">Customers</a>
+    <a href="loyalty.html">Loyalty</a>
+    <a href="inventory.html">Inventory</a>
+    <a href="reports.html">Reports</a>
+    <a href="login.html">Login</a>
+  </nav>
+  <div class="header-meta">
+    <span class="dot" id="conn-dot" style="background: var(--green);"></span>
+    <span>api: localhost:3000</span>
+  </div>
+</header>
+
+<main class="main-single" style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+  
+  <div class="panel">
+    <h3 style="margin-top: 0;">Available Products</h3>
+    <div id="product-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; margin-top: 20px;">
+      </div>
+  </div>
+
+  <div class="panel" style="display: flex; flex-direction: column;">
+    <h3 style="margin-top: 0;">Current Cart</h3>
+    
+    <ul id="cart-items" style="list-style: none; padding: 0; flex-grow: 1; overflow-y: auto; border-bottom: 1px solid #333; margin-bottom: 20px; padding-bottom: 10px;">
+      <li style="color: #666; font-style: italic;">Cart is empty</li>
+    </ul>
+
+    <div style="font-size: 24px; font-weight: bold; text-align: right; margin-bottom: 20px; font-family: 'DM Mono', monospace;">
+      Total: R <span id="cart-total">0.00</span>
+    </div>
+
+    <form id="checkout-form" style="display: flex; flex-direction: column; gap: 15px;">
+        <div style="display: flex; gap: 10px;">
+        <select id="checkout-customer" required style="flex: 1; padding: 12px; background: #111; color: #fff; border: 1px solid #333; border-radius: 4px;">
+          <option value="" disabled selected>Select Customer...</option>
+          </select>
+        
+        <button type="button" onclick="quickAddCustomer()" style="padding: 0 15px; background: var(--green); color: #000; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;" title="Register New Walk-in">
+          + NEW
+        </button>
+      </div>
+      
+      <div style="display: flex; gap: 10px;">
+        <select id="checkout-customer" required style="flex: 1; padding: 12px; background: #111; color: #fff; border: 1px solid #333; border-radius: 4px;">
+          <option value="" disabled selected>Select Customer...</option>
+          </select>
+        <button type="button" onclick="quickAddCustomer()" style="padding: 0 15px; background: var(--green); color: #000; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;" title="Register New Walk-in">
+          + NEW
+        </button>
+      </div>
+
+      <select id="checkout-payment" required style="padding: 12px; background: #111; color: #fff; border: 1px solid #333; border-radius: 4px;">
+        <option value="Cash">Cash</option>
+        <option value="Card">Card</option>
+      </select>
+
+      <button type="submit" style="padding: 15px; background: #fff; color: #000; font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 600; border: none; border-radius: 4px; cursor: pointer; transition: 0.2s;">
+        COMPLETE SALE
+      </button>
+    </form>
+  </div>
+
+</main>
+
+<script>
+  let cart = []; 
+  let allProducts = [];
+
+  // Initialize POS
+  async function initPOS() {
+      const prodRes = await fetch('http://localhost:3000/api/products');
+      allProducts = await prodRes.json();
+      renderProducts();
+      await loadCustomers();
+  }
+
+  // Fetch Customers for dropdown
+  async function loadCustomers() {
+      const custRes = await fetch('http://localhost:3000/api/customers');
+      const customers = await custRes.json();
+      const customerSelect = document.getElementById('checkout-customer');
+      
+      // Reset dropdown before populating to avoid duplicates
+      customerSelect.innerHTML = '<option value="" disabled selected>Select Customer...</option>';
+      customers.forEach(c => {
+          customerSelect.innerHTML += `<option value="${c.id}">${c.name || c.full_name}</option>`;
+      });
+  }
+
+  // The Magic "Quick Add" Function
+  async function quickAddCustomer() {
+      const newName = prompt("Enter the new customer's full name:");
+      if (!newName) return; // Cancel if they leave it blank
+
+      try {
+          // We reuse your existing POST route!
+          const response = await fetch('http://localhost:3000/api/customers', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: newName, email: null }) 
+          });
+
+          if (response.ok) {
+              const addedCustomer = await response.json();
+              await loadCustomers(); // Reload the dropdown
+              
+              // Automatically select the new person so the cashier doesn't have to search for them
+              document.getElementById('checkout-customer').value = addedCustomer.id;
+              alert(`${newName} registered successfully!`);
+          } else {
+              alert("Failed to register customer.");
+          }
+      } catch (error) {
+          console.error("API Error:", error);
+      }
+  }
+
+  // Render clickable products
+  function renderProducts() {
+      const grid = document.getElementById('product-grid');
+      grid.innerHTML = allProducts.map(p => `
+          <div onclick="addToCart(${p.id}, '${p.name}', ${p.price})" 
+               style="border: 1px solid #333; background: #111; padding: 15px; text-align: center; cursor: pointer; border-radius: 8px; transition: border-color 0.2s;">
+              <strong style="color: #fff;">${p.name}</strong><br>
+              <span style="color: var(--green); font-family: 'DM Mono', monospace; font-size: 14px;">R ${Number(p.price).toFixed(2)}</span><br>
+              <small style="color: #666;">Stock: ${p.stock}</small>
+          </div>
+      `).join('');
+  }
+
+  // Add item to cart
+  function addToCart(id, name, price) {
+      const existingItem = cart.find(item => item.id === id);
+      if (existingItem) {
+          existingItem.qty += 1; 
+      } else {
+          cart.push({ id, name, price: Number(price), qty: 1 }); 
+      }
+      updateCartUI();
+  }
+
+  // Update Cart Math
+  function updateCartUI() {
+      const cartList = document.getElementById('cart-items');
+      const totalSpan = document.getElementById('cart-total');
+      
+      if (cart.length === 0) {
+          cartList.innerHTML = '<li style="color: #666; font-style: italic;">Cart is empty</li>';
+          totalSpan.innerText = '0.00';
+          return;
+      }
+
+      let total = 0;
+      cartList.innerHTML = cart.map(item => {
+          const itemTotal = item.price * item.qty;
+          total += itemTotal;
+          return `
+            <li style="display: flex; justify-content: space-between; padding: 8px 0; color: #fff; font-family: 'DM Mono', monospace;">
+              <span>${item.qty}x ${item.name}</span>
+              <span>R ${itemTotal.toFixed(2)}</span>
+            </li>`;
+      }).join('');
+
+      totalSpan.innerText = total.toFixed(2);
+  }
+
+  // Checkout Submission
+  document.getElementById('checkout-form').addEventListener('submit', async function(event) {
+      event.preventDefault();
+
+      if (cart.length === 0) {
+          alert("The cart is empty! Add some products first.");
+          return;
+      }
+
+      const customerId = document.getElementById('checkout-customer').value;
+      const paymentMethod = document.getElementById('checkout-payment').value;
+      const totalAmount = document.getElementById('cart-total').innerText;
+
+      try {
+          const response = await fetch('http://localhost:3000/api/sales', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  customer_id: customerId,
+                  total_amount: parseFloat(totalAmount),
+                  payment_method: paymentMethod,
+                  items: cart 
+              })
+          });
+
+          if (response.ok) {
+              alert("Sale Complete! 🎉");
+              cart = []; 
+              updateCartUI(); 
+              document.getElementById('checkout-form').reset();
+              initPOS(); // Refresh stock numbers!
+          } else {
+              alert("Checkout failed. Check the server console.");
+          }
+      } catch (error) {
+          console.error("API Error:", error);
+      }
+  });
+
+  // Boot up the system
+  initPOS();
+  // The Magic "Quick Add" Function
+  async function quickAddCustomer() {
+      const newName = prompt("Enter the new customer's full name:");
+      if (!newName) return; // Cancel if they leave it blank
+
+      try {
+          // Send the new name to your existing POST route!
+          const response = await fetch('http://localhost:3000/api/customers', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: newName, email: null }) 
+          });
+
+          if (response.ok) {
+              const addedCustomer = await response.json();
+              await loadCustomers(); // Refresh the dropdown list instantly
+              
+              // Automatically select the new person so the cashier doesn't have to scroll for them
+              document.getElementById('checkout-customer').value = addedCustomer.id;
+              alert(`${newName} registered successfully!`);
+          } else {
+              alert("Failed to register customer.");
+          }
+      } catch (error) {
+          console.error("API Error:", error);
+      }
+  }
+</script>
+
+</body>
+</html>

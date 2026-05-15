@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POS System — Products</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">POS System <span>/</span> Products</div>
+  
+<nav>
+    <a href="index.html">Dashboard</a>
+    <a href="register.html">Register</a>
+    <a href="products.html">Products</a>
+    <a href="sales.html">Sales</a>
+    <a href="employees.html">Employees</a>
+    <a href="customers.html">Customers</a>
+    <a href="loyalty.html">Loyalty</a>
+    <a href="inventory.html">Inventory</a>
+    <a href="reports.html">Reports</a>
+    <a href="login.html">Login</a>
+  </nav>
+
+  <div class="header-meta">
+    <span class="dot" id="conn-dot"></span>
+    <span id="conn-label">api: localhost:3000</span>
+  </div>
+</header>
+
+<main>
+  <div style="display:flex;flex-direction:column;gap:1.5rem">
+    <div class="panel">
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-label">Total Products</div>
+          <div class="stat-val" id="s-total">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Total Stock</div>
+          <div class="stat-val" id="s-stock">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Avg Price</div>
+          <div class="stat-val" id="s-avg">—</div>
+        </div>
+      </div>
+
+      <div class="search-bar">
+        <input type="text" id="search" placeholder="Search products by name…" oninput="filterTable()">
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width:60px">ID</th>
+            <th>Product Name</th>
+            <th>Price (R)</th>
+            <th>Stock</th>
+            <th style="width:150px">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr><td colspan="5" class="empty-state">Loading products…</td></tr>
+        </tbody>
+      </table>
+
+      <div class="status-bar">
+        <span id="row-count">0 products</span>
+        <span id="last-refresh">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">
+          Product Form
+          <span class="form-mode-tag tag-add" id="form-tag">ADD</span>
+        </span>
+        <button class="btn" onclick="refreshProducts()" style="font-size:11px;padding:4px 10px">↻ Refresh</button>
+      </div>
+      <div class="form-section">
+        <div class="field">
+          <label>Product Name</label>
+          <input type="text" id="f-name" placeholder="e.g. Maize Meal">
+        </div>
+        <div class="field">
+          <label>Price (R)</label>
+          <input type="number" id="f-price" placeholder="0.00" step="0.01" min="0">
+        </div>
+        <div class="field">
+          <label>Stock Quantity</label>
+          <input type="number" id="f-stock" placeholder="0" min="0">
+        </div>
+        <button class="btn-primary" onclick="submitForm()" id="submit-btn">Add Product</button>
+        <button class="btn-secondary" onclick="resetForm()" id="cancel-btn" style="display:none">Cancel Edit</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Activity Log</span>
+      </div>
+      <div class="log-section" id="log-section">
+        <div class="log-entry">
+          <span class="log-time">--:--</span>
+          <span>Waiting for actions…</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const API = 'http://localhost:3000/api/products';
+  let allProducts = [];
+  let editingId = null;
+
+  function ts() {
+    return new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  function log(msg, type = '') {
+    const s = document.getElementById('log-section');
+    const e = document.createElement('div');
+    e.className = 'log-entry';
+    e.innerHTML = `<span class="log-time">${ts()}</span><span class="${type ? 'log-' + type : ''}">${msg}</span>`;
+    s.prepend(e);
+    const entries = s.querySelectorAll('.log-entry');
+    if (entries.length > 10) entries[entries.length - 1].remove();
+  }
+
+  function stockClass(n) {
+    if (n === 0) return 'stock-out';
+    if (n < 20)  return 'stock-low';
+    return 'stock-ok';
+  }
+
+  function updateStats(products) {
+    document.getElementById('s-total').textContent = products.length;
+    const totalStock = products.reduce((a, p) => a + p.stock, 0);
+    document.getElementById('s-stock').textContent = totalStock.toLocaleString();
+    const avg = products.length
+      ? products.reduce((a, p) => a + parseFloat(p.price), 0) / products.length
+      : 0;
+    document.getElementById('s-avg').textContent = 'R' + avg.toFixed(2);
+  }
+
+  function renderTable(products) {
+    const tbody = document.getElementById('table-body');
+    if (!products.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No products found</td></tr>';
+      document.getElementById('row-count').textContent = '0 products';
+      return;
+    }
+    tbody.innerHTML = products.map(p => `
+      <tr>
+        <td class="id-cell">#${p.id}</td>
+        <td class="name-cell">${p.name}</td>
+        <td class="price-cell">R${parseFloat(p.price).toFixed(2)}</td>
+        <td><span class="stock-badge ${stockClass(p.stock)}">${p.stock} units</span></td>
+        <td>
+          <div class="action-btns">
+            <button class="btn btn-edit" onclick="startEdit(${p.id})">Edit</button>
+            <button class="btn btn-danger" onclick="deleteProduct(${p.id})">Delete</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+    document.getElementById('row-count').textContent = `${products.length} product${products.length !== 1 ? 's' : ''}`;
+    document.getElementById('last-refresh').textContent = 'updated ' + ts();
+  }
+
+  function filterTable() {
+    const q = document.getElementById('search').value.toLowerCase();
+    const filtered = allProducts.filter(p => p.name.toLowerCase().includes(q));
+    renderTable(filtered);
+  }
+
+  async function refreshProducts() {
+    try {
+      const r = await fetch(API);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      allProducts = await r.json();
+      updateStats(allProducts);
+      filterTable();
+      log('Products loaded (' + allProducts.length + ')', 'ok');
+      document.getElementById('conn-dot').style.background = 'var(--green)';
+    } catch (e) {
+      log('GET failed: ' + e.message, 'err');
+      document.getElementById('conn-dot').style.background = 'var(--red)';
+      document.getElementById('table-body').innerHTML =
+        '<tr><td colspan="5" class="empty-state" style="color:var(--red)">Could not connect to API — make sure the server is running on port 3000</td></tr>';
+    }
+  }
+
+  function startEdit(id) {
+    const p = allProducts.find(x => x.id === id);
+    if (!p) return;
+    editingId = id;
+    document.getElementById('f-name').value = p.name;
+    document.getElementById('f-price').value = parseFloat(p.price).toFixed(2);
+    document.getElementById('f-stock').value = p.stock;
+    document.getElementById('submit-btn').textContent = 'Update Product';
+    document.getElementById('cancel-btn').style.display = 'block';
+    document.getElementById('form-tag').textContent = 'EDIT';
+    document.getElementById('form-tag').className = 'form-mode-tag tag-edit';
+    document.getElementById('f-name').focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetForm() {
+    editingId = null;
+    document.getElementById('f-name').value = '';
+    document.getElementById('f-price').value = '';
+    document.getElementById('f-stock').value = '';
+    document.getElementById('submit-btn').textContent = 'Add Product';
+    document.getElementById('cancel-btn').style.display = 'none';
+    document.getElementById('form-tag').textContent = 'ADD';
+    document.getElementById('form-tag').className = 'form-mode-tag tag-add';
+  }
+
+  async function submitForm() {
+    const name  = document.getElementById('f-name').value.trim();
+    const price = parseFloat(document.getElementById('f-price').value);
+    const stock = parseInt(document.getElementById('f-stock').value);
+    if (!name || isNaN(price) || isNaN(stock)) {
+      log('Please fill in all fields', 'err');
+      return;
+    }
+    const body = JSON.stringify({ name, price, stock });
+    try {
+      let r;
+      if (editingId) {
+        r = await fetch(API + '/' + editingId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        log('Updated: ' + name, 'ok');
+      } else {
+        r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        log('Added: ' + name, 'ok');
+      }
+      resetForm();
+      refreshProducts();
+    } catch (e) {
+      log((editingId ? 'PUT' : 'POST') + ' failed: ' + e.message, 'err');
+    }
+  }
+
+  async function deleteProduct(id) {
+    const p = allProducts.find(x => x.id === id);
+    if (!p) return;
+    if (!confirm('Delete "' + p.name + '"? This cannot be undone.')) return;
+    try {
+      const r = await fetch(API + '/' + id, { method: 'DELETE' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      log('Deleted: ' + p.name, 'ok');
+      refreshProducts();
+    } catch (e) {
+      log('DELETE failed: ' + e.message, 'err');
+    }
+  }
+
+  refreshProducts();
+</script>
+
+<script>
+  // Function to fetch and display products
+  async function loadProducts() {
+      try {
+          // 1. Ask the backend for the data
+          const response = await fetch('/api/products');
+          const products = await response.json();
+
+          // 2. Find the table body in the team's HTML (assuming it has an id of 'product-table-body')
+          // NOTE: You might need to change 'product-table-body' to match whatever ID your team used!
+          const tableBody = document.getElementById('product-table-body');
+          
+          // Clear out any dummy data the team left in there
+          tableBody.innerHTML = '';
+
+          // 3. Loop through the database products and create HTML rows
+          products.forEach(product => {
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                  <td>#${product.id}</td>
+                  <td>${product.name}</td>
+                  <td>R ${parseFloat(product.price).toFixed(2)}</td>
+                  <td>${product.stock}</td>
+                  <td>
+                      <button onclick="deleteProduct(${product.id})">Delete</button>
+                  </td>
+              `;
+              tableBody.appendChild(row);
+          });
+
+      } catch (error) {
+          console.error("Failed to load products:", error);
+      }
+  }
+
+  // Run the function as soon as the page loads
+  loadProducts();
+</script>
+</body>
+</html>
