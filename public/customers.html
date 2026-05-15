@@ -12,108 +12,265 @@
 <header>
   <div class="logo">POS System <span>/</span> Customers</div>
   
-<nav>
-  <a href="products.html">Products</a>
-  <a href="sales.html">Sales</a>
-  <a href="employees.html">Employees</a>
-  <a href="customers.html">Customers</a>
-  <a href="loyalty.html">Loyalty</a>
-</nav>
+  <nav>
+    <a href="index.html">Dashboard</a>
+    <a href="products.html">Products</a>
+    <a href="sales.html">Sales</a>
+    <a href="employees.html">Employees</a>
+    <a href="customers.html">Customers</a>
+    <a href="loyalty.html">Loyalty</a>
+  </nav>
 
   <div class="header-meta">
     <span class="dot" id="conn-dot"></span>
-    <span>api: localhost:3000</span>
+    <span id="conn-label">api: localhost:3000</span>
   </div>
 </header>
 
-<main class="main-single">
-  <div class="panel">
-    <div class="stats-row">
-      <div class="stat">
-        <div class="stat-label">Total Records</div>
-        <div class="stat-val" id="s-total">—</div>
+<main>
+  <div style="display:flex;flex-direction:column;gap:1.5rem">
+    <div class="panel">
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-label">Total Customers</div>
+          <div class="stat-val" id="s-total">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">API Status</div>
+          <div class="stat-val" id="s-status">—</div>
+        </div>
       </div>
-      <div class="stat">
-        <div class="stat-label">API Status</div>
-        <div class="stat-val" id="s-status">LIVE</div>
+
+      <div class="search-bar">
+        <input type="text" id="search" placeholder="Search customers by name or email…" oninput="filterTable()">
       </div>
-      <div class="stat">
-        <div class="stat-label">Endpoint</div>
-        <div class="stat-val" style="font-size:14px">/api/customers</div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width:60px">ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th style="width:150px">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr><td colspan="5" class="empty-state">Loading customers…</td></tr>
+        </tbody>
+      </table>
+
+      <div class="status-bar">
+        <span id="row-count">0 customers</span>
+        <span id="last-refresh">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">
+          Customer Form
+          <span class="form-mode-tag tag-add" id="form-tag">ADD</span>
+        </span>
+        <button class="btn" onclick="loadCustomers()" style="font-size:11px;padding:4px 10px">↻ Refresh</button>
+      </div>
+      <div class="form-section">
+        <div class="field">
+          <label>First Name</label>
+          <input type="text" id="f-first-name" placeholder="First name">
+        </div>
+        <div class="field">
+          <label>Last Name</label>
+          <input type="text" id="f-last-name" placeholder="Last name">
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="f-email" placeholder="email@example.com">
+        </div>
+        <div class="field">
+          <label>Phone</label>
+          <input type="tel" id="f-phone" placeholder="+27...">
+        </div>
+        <div class="field">
+          <label>Address</label>
+          <input type="text" id="f-address" placeholder="Street address">
+        </div>
+        <div class="field">
+          <label>City</label>
+          <input type="text" id="f-city" placeholder="City">
+        </div>
+        <button class="btn-primary" onclick="submitForm()" id="submit-btn">Add Customer</button>
+        <button class="btn-secondary" onclick="resetForm()" id="cancel-btn" style="display:none">Cancel Edit</button>
       </div>
     </div>
 
-    <div class="search-bar">
-      <input type="text" id="search" placeholder="Search customers…" oninput="filterTable()">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Activity Log</span>
+      </div>
+      <div class="log-section" id="log-section">
+        <div class="log-entry">
+          <span class="log-time">--:--</span>
+          <span>Waiting for actions…</span>
+        </div>
+      </div>
     </div>
-
-    <table>
-      <thead>
-        <tr><th>ID</th><th>Name</th><th>Email</th><th>Loyalty Points</th></tr>
-      </thead>
-      <tbody id="table-body">
-        <tr><td colspan="4" class="empty-state">Loading records…</td></tr>
-      </tbody>
-    </table>
   </div>
 </main>
 
 <script>
-const API = 'http://localhost:3000/api/customers';
-let allData = [];
+  const API = 'http://localhost:3000/api/customers';
+  let allCustomers = [];
+  let editingId = null;
 
-function value(item, keys) {
-  for (const key of keys) {
-    if (item[key] !== undefined && item[key] !== null) return item[key];
-  }
-  return '—';
-}
-
-function renderTable(data) {
-  const tbody = document.getElementById('table-body');
-
-  if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No records found</td></tr>';
-    return;
+  function ts() {
+    return new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   }
 
-  tbody.innerHTML = data.map(item => `
-    <tr>
-      <td class="id-cell">#${value(item, ['id', 'customers_id', 'transaction_id'])}</td>
-      <td>${value(item, ['name', 'customer', 'customer_name', 'employee_name'])}</td>
-      <td>${value(item, ['total', 'price', 'email', 'role', 'points', 'loyalty_points'])}</td>
-      <td>${value(item, ['payment_method', 'status', 'stock'])}</td>
-    </tr>
-  `).join('');
-}
-
-function filterTable() {
-  const q = document.getElementById('search').value.toLowerCase();
-  const filtered = allData.filter(x => JSON.stringify(x).toLowerCase().includes(q));
-  renderTable(filtered);
-}
-
-async function loadData() {
-  try {
-    const response = await fetch(API);
-    if (!response.ok) throw new Error('HTTP ' + response.status);
-    allData = await response.json();
-
-    document.getElementById('s-total').textContent = allData.length;
-    document.getElementById('s-status').textContent = 'LIVE';
-    document.getElementById('conn-dot').style.background = 'var(--green)';
-
-    renderTable(allData);
-  } catch (error) {
-    document.getElementById('s-status').textContent = 'OFFLINE';
-    document.getElementById('conn-dot').style.background = 'var(--red)';
-    document.getElementById('table-body').innerHTML =
-      '<tr><td colspan="4" class="empty-state" style="color:var(--red)">Could not connect to API</td></tr>';
+  function log(msg, type = '') {
+    const s = document.getElementById('log-section');
+    const e = document.createElement('div');
+    e.className = 'log-entry';
+    e.innerHTML = `<span class="log-time">${ts()}</span><span class="${type ? 'log-' + type : ''}">${msg}</span>`;
+    s.prepend(e);
+    const entries = s.querySelectorAll('.log-entry');
+    if (entries.length > 10) entries[entries.length - 1].remove();
   }
-}
 
-loadData();
+  function renderTable(customers) {
+    const tbody = document.getElementById('table-body');
+    if (!customers.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No customers found</td></tr>';
+      document.getElementById('row-count').textContent = '0 customers';
+      return;
+    }
+    tbody.innerHTML = customers.map(c => `
+      <tr>
+        <td class="id-cell">#${c.id}</td>
+        <td class="name-cell">${c.first_name} ${c.last_name}</td>
+        <td>${c.email || '—'}</td>
+        <td>${c.phone || '—'}</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn btn-edit" onclick="startEdit(${c.id})">Edit</button>
+            <button class="btn btn-danger" onclick="deleteCustomer(${c.id})">Delete</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+    document.getElementById('row-count').textContent = `${customers.length} customer${customers.length !== 1 ? 's' : ''}`;
+    document.getElementById('last-refresh').textContent = 'updated ' + ts();
+  }
+
+  function filterTable() {
+    const q = document.getElementById('search').value.toLowerCase();
+    const filtered = allCustomers.filter(c => 
+      (c.first_name + ' ' + c.last_name).toLowerCase().includes(q) ||
+      (c.email || '').toLowerCase().includes(q)
+    );
+    renderTable(filtered);
+  }
+
+  async function loadCustomers() {
+    try {
+      const r = await fetch(API);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      allCustomers = await r.json();
+      document.getElementById('s-total').textContent = allCustomers.length;
+      filterTable();
+      log('Customers loaded (' + allCustomers.length + ')', 'ok');
+      document.getElementById('conn-dot').style.background = 'var(--green)';
+      document.getElementById('s-status').textContent = 'LIVE';
+    } catch (e) {
+      log('GET failed: ' + e.message, 'err');
+      document.getElementById('conn-dot').style.background = 'var(--red)';
+      document.getElementById('s-status').textContent = 'OFFLINE';
+      document.getElementById('table-body').innerHTML =
+        '<tr><td colspan="5" class="empty-state" style="color:var(--red)">Could not connect to API</td></tr>';
+    }
+  }
+
+  function startEdit(id) {
+    const c = allCustomers.find(x => x.id === id);
+    if (!c) return;
+    editingId = id;
+    document.getElementById('f-first-name').value = c.first_name;
+    document.getElementById('f-last-name').value = c.last_name;
+    document.getElementById('f-email').value = c.email || '';
+    document.getElementById('f-phone').value = c.phone || '';
+    document.getElementById('f-address').value = c.address || '';
+    document.getElementById('f-city').value = c.city || '';
+    document.getElementById('submit-btn').textContent = 'Update Customer';
+    document.getElementById('cancel-btn').style.display = 'block';
+    document.getElementById('form-tag').textContent = 'EDIT';
+    document.getElementById('form-tag').className = 'form-mode-tag tag-edit';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetForm() {
+    editingId = null;
+    document.getElementById('f-first-name').value = '';
+    document.getElementById('f-last-name').value = '';
+    document.getElementById('f-email').value = '';
+    document.getElementById('f-phone').value = '';
+    document.getElementById('f-address').value = '';
+    document.getElementById('f-city').value = '';
+    document.getElementById('submit-btn').textContent = 'Add Customer';
+    document.getElementById('cancel-btn').style.display = 'none';
+    document.getElementById('form-tag').textContent = 'ADD';
+    document.getElementById('form-tag').className = 'form-mode-tag tag-add';
+  }
+
+  async function submitForm() {
+    const first_name = document.getElementById('f-first-name').value.trim();
+    const last_name = document.getElementById('f-last-name').value.trim();
+    const email = document.getElementById('f-email').value.trim();
+    const phone = document.getElementById('f-phone').value.trim();
+    const address = document.getElementById('f-address').value.trim();
+    const city = document.getElementById('f-city').value.trim();
+
+    if (!first_name || !last_name) {
+      log('Please fill in required fields', 'err');
+      return;
+    }
+
+    const body = JSON.stringify({ first_name, last_name, email, phone, address, city });
+    try {
+      let r;
+      if (editingId) {
+        r = await fetch(API + '/' + editingId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        log('Updated: ' + first_name + ' ' + last_name, 'ok');
+      } else {
+        r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        log('Added: ' + first_name + ' ' + last_name, 'ok');
+      }
+      resetForm();
+      loadCustomers();
+    } catch (e) {
+      log((editingId ? 'PUT' : 'POST') + ' failed: ' + e.message, 'err');
+    }
+  }
+
+  async function deleteCustomer(id) {
+    const c = allCustomers.find(x => x.id === id);
+    if (!c) return;
+    if (!confirm('Delete "' + c.first_name + ' ' + c.last_name + '"? This cannot be undone.')) return;
+    try {
+      const r = await fetch(API + '/' + id, { method: 'DELETE' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      log('Deleted: ' + c.first_name + ' ' + c.last_name, 'ok');
+      loadCustomers();
+    } catch (e) {
+      log('DELETE failed: ' + e.message, 'err');
+    }
+  }
+
+  loadCustomers();
 </script>
-
 </body>
 </html>
+

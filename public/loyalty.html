@@ -10,110 +10,248 @@
 <body>
 
 <header>
-  <div class="logo">POS System <span>/</span> Loyalty</div>
+  <div class="logo">POS System <span>/</span> Loyalty Program</div>
   
-<nav>
-  <a href="products.html">Products</a>
-  <a href="sales.html">Sales</a>
-  <a href="employees.html">Employees</a>
-  <a href="customers.html">Customers</a>
-  <a href="loyalty.html">Loyalty</a>
-</nav>
+  <nav>
+    <a href="index.html">Dashboard</a>
+    <a href="products.html">Products</a>
+    <a href="sales.html">Sales</a>
+    <a href="employees.html">Employees</a>
+    <a href="customers.html">Customers</a>
+    <a href="loyalty.html">Loyalty</a>
+  </nav>
 
   <div class="header-meta">
     <span class="dot" id="conn-dot"></span>
-    <span>api: localhost:3000</span>
+    <span id="conn-label">api: localhost:3000</span>
   </div>
 </header>
 
-<main class="main-single">
-  <div class="panel">
-    <div class="stats-row">
-      <div class="stat">
-        <div class="stat-label">Total Records</div>
-        <div class="stat-val" id="s-total">—</div>
+<main>
+  <div style="display:flex;flex-direction:column;gap:1.5rem">
+    <div class="panel">
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-label">Total Members</div>
+          <div class="stat-val" id="s-total">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Total Points</div>
+          <div class="stat-val" id="s-points">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Avg Points</div>
+          <div class="stat-val" id="s-avg">—</div>
+        </div>
       </div>
-      <div class="stat">
-        <div class="stat-label">API Status</div>
-        <div class="stat-val" id="s-status">LIVE</div>
+
+      <div class="search-bar">
+        <input type="text" id="search" placeholder="Search loyalty members…" oninput="filterTable()">
       </div>
-      <div class="stat">
-        <div class="stat-label">Endpoint</div>
-        <div class="stat-val" style="font-size:14px">/api/loyalty</div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width:60px">ID</th>
+            <th>Customer</th>
+            <th>Email</th>
+            <th>Points</th>
+            <th style="width:150px">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr><td colspan="5" class="empty-state">Loading loyalty records…</td></tr>
+        </tbody>
+      </table>
+
+      <div class="status-bar">
+        <span id="row-count">0 members</span>
+        <span id="last-refresh">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">
+          Points Form
+          <span class="form-mode-tag tag-add" id="form-tag">ADD</span>
+        </span>
+        <button class="btn" onclick="loadLoyalty()" style="font-size:11px;padding:4px 10px">↻ Refresh</button>
+      </div>
+      <div class="form-section">
+        <div class="field">
+          <label>Customer ID</label>
+          <input type="number" id="f-customer-id" placeholder="Customer ID" min="1">
+        </div>
+        <div class="field">
+          <label>Points Balance</label>
+          <input type="number" id="f-points" placeholder="0" min="0" step="1">
+        </div>
+        <button class="btn-primary" onclick="submitForm()" id="submit-btn">Create/Update</button>
+        <button class="btn-secondary" onclick="resetForm()" id="cancel-btn" style="display:none">Cancel Edit</button>
       </div>
     </div>
 
-    <div class="search-bar">
-      <input type="text" id="search" placeholder="Search loyalty…" oninput="filterTable()">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Activity Log</span>
+      </div>
+      <div class="log-section" id="log-section">
+        <div class="log-entry">
+          <span class="log-time">--:--</span>
+          <span>Waiting for actions…</span>
+        </div>
+      </div>
     </div>
-
-    <table>
-      <thead>
-        <tr><th>ID</th><th>Customer</th><th>Points</th><th>Status</th></tr>
-      </thead>
-      <tbody id="table-body">
-        <tr><td colspan="4" class="empty-state">Loading records…</td></tr>
-      </tbody>
-    </table>
   </div>
 </main>
 
 <script>
-const API = 'http://localhost:3000/api/loyalty';
-let allData = [];
+  const API = 'http://localhost:3000/api/loyalty';
+  let allLoyalty = [];
+  let editingId = null;
 
-function value(item, keys) {
-  for (const key of keys) {
-    if (item[key] !== undefined && item[key] !== null) return item[key];
-  }
-  return '—';
-}
-
-function renderTable(data) {
-  const tbody = document.getElementById('table-body');
-
-  if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No records found</td></tr>';
-    return;
+  function ts() {
+    return new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   }
 
-  tbody.innerHTML = data.map(item => `
-    <tr>
-      <td class="id-cell">#${value(item, ['id', 'loyalty_id', 'transaction_id'])}</td>
-      <td>${value(item, ['name', 'customer', 'customer_name', 'employee_name'])}</td>
-      <td>${value(item, ['total', 'price', 'email', 'role', 'points', 'loyalty_points'])}</td>
-      <td>${value(item, ['payment_method', 'status', 'stock'])}</td>
-    </tr>
-  `).join('');
-}
-
-function filterTable() {
-  const q = document.getElementById('search').value.toLowerCase();
-  const filtered = allData.filter(x => JSON.stringify(x).toLowerCase().includes(q));
-  renderTable(filtered);
-}
-
-async function loadData() {
-  try {
-    const response = await fetch(API);
-    if (!response.ok) throw new Error('HTTP ' + response.status);
-    allData = await response.json();
-
-    document.getElementById('s-total').textContent = allData.length;
-    document.getElementById('s-status').textContent = 'LIVE';
-    document.getElementById('conn-dot').style.background = 'var(--green)';
-
-    renderTable(allData);
-  } catch (error) {
-    document.getElementById('s-status').textContent = 'OFFLINE';
-    document.getElementById('conn-dot').style.background = 'var(--red)';
-    document.getElementById('table-body').innerHTML =
-      '<tr><td colspan="4" class="empty-state" style="color:var(--red)">Could not connect to API</td></tr>';
+  function log(msg, type = '') {
+    const s = document.getElementById('log-section');
+    const e = document.createElement('div');
+    e.className = 'log-entry';
+    e.innerHTML = `<span class="log-time">${ts()}</span><span class="${type ? 'log-' + type : ''}">${msg}</span>`;
+    s.prepend(e);
+    const entries = s.querySelectorAll('.log-entry');
+    if (entries.length > 10) entries[entries.length - 1].remove();
   }
-}
 
-loadData();
+  function updateStats(loyalty) {
+    document.getElementById('s-total').textContent = loyalty.length;
+    const totalPoints = loyalty.reduce((a, l) => a + (l.points_balance || 0), 0);
+    document.getElementById('s-points').textContent = totalPoints.toLocaleString();
+    const avg = loyalty.length ? Math.round(totalPoints / loyalty.length) : 0;
+    document.getElementById('s-avg').textContent = avg.toLocaleString();
+  }
+
+  function renderTable(loyalty) {
+    const tbody = document.getElementById('table-body');
+    if (!loyalty.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No loyalty records found</td></tr>';
+      document.getElementById('row-count').textContent = '0 members';
+      return;
+    }
+    tbody.innerHTML = loyalty.map(l => `
+      <tr>
+        <td class="id-cell">#${l.id}</td>
+        <td class="name-cell">${l.customer_name || '—'}</td>
+        <td>${l.email || '—'}</td>
+        <td><span class="stock-badge stock-ok">${l.points_balance} pts</span></td>
+        <td>
+          <div class="action-btns">
+            <button class="btn btn-edit" onclick="startEdit(${l.id})">Edit</button>
+            <button class="btn btn-danger" onclick="deleteLoyalty(${l.id})">Delete</button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+    document.getElementById('row-count').textContent = `${loyalty.length} member${loyalty.length !== 1 ? 's' : ''}`;
+    document.getElementById('last-refresh').textContent = 'updated ' + ts();
+  }
+
+  function filterTable() {
+    const q = document.getElementById('search').value.toLowerCase();
+    const filtered = allLoyalty.filter(l => 
+      (l.customer_name || '').toLowerCase().includes(q) ||
+      (l.email || '').toLowerCase().includes(q)
+    );
+    renderTable(filtered);
+  }
+
+  async function loadLoyalty() {
+    try {
+      const r = await fetch(API);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      allLoyalty = await r.json();
+      updateStats(allLoyalty);
+      filterTable();
+      log('Loyalty records loaded (' + allLoyalty.length + ')', 'ok');
+      document.getElementById('conn-dot').style.background = 'var(--green)';
+    } catch (e) {
+      log('GET failed: ' + e.message, 'err');
+      document.getElementById('conn-dot').style.background = 'var(--red)';
+      document.getElementById('table-body').innerHTML =
+        '<tr><td colspan="5" class="empty-state" style="color:var(--red)">Could not connect to API</td></tr>';
+    }
+  }
+
+  function startEdit(id) {
+    const l = allLoyalty.find(x => x.id === id);
+    if (!l) return;
+    editingId = id;
+    document.getElementById('f-customer-id').value = l.customer_id;
+    document.getElementById('f-points').value = l.points_balance;
+    document.getElementById('submit-btn').textContent = 'Update Points';
+    document.getElementById('cancel-btn').style.display = 'block';
+    document.getElementById('form-tag').textContent = 'EDIT';
+    document.getElementById('form-tag').className = 'form-mode-tag tag-edit';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function resetForm() {
+    editingId = null;
+    document.getElementById('f-customer-id').value = '';
+    document.getElementById('f-points').value = '';
+    document.getElementById('submit-btn').textContent = 'Create/Update';
+    document.getElementById('cancel-btn').style.display = 'none';
+    document.getElementById('form-tag').textContent = 'ADD';
+    document.getElementById('form-tag').className = 'form-mode-tag tag-add';
+  }
+
+  async function submitForm() {
+    const customer_id = parseInt(document.getElementById('f-customer-id').value);
+    const points_balance = parseInt(document.getElementById('f-points').value);
+
+    if (isNaN(customer_id) || isNaN(points_balance)) {
+      log('Please fill in all fields', 'err');
+      return;
+    }
+
+    const body = JSON.stringify({ customer_id, points_balance });
+    try {
+      let r;
+      if (editingId) {
+        r = await fetch(API + '/' + editingId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        log('Updated: ' + points_balance + ' points', 'ok');
+      } else {
+        r = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        log('Created loyalty record: ' + points_balance + ' points', 'ok');
+      }
+      resetForm();
+      loadLoyalty();
+    } catch (e) {
+      log((editingId ? 'PUT' : 'POST') + ' failed: ' + e.message, 'err');
+    }
+  }
+
+  async function deleteLoyalty(id) {
+    const l = allLoyalty.find(x => x.id === id);
+    if (!l) return;
+    if (!confirm('Delete loyalty record for "' + (l.customer_name || 'Customer #' + l.customer_id) + '"? This cannot be undone.')) return;
+    try {
+      const r = await fetch(API + '/' + id, { method: 'DELETE' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      log('Deleted loyalty record', 'ok');
+      loadLoyalty();
+    } catch (e) {
+      log('DELETE failed: ' + e.message, 'err');
+    }
+  }
+
+  loadLoyalty();
 </script>
-
 </body>
 </html>
