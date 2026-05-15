@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 
-// 1. GET all past sales (Sales History)
+// 1. GET all past sales
 router.get('/', async (req, res) => {
     try {
         const sales = await pool.query(`
@@ -23,14 +23,13 @@ router.get('/', async (req, res) => {
 });
 // 2. THE MASTER CHECKOUT ROUTE (Receives data from register.html)
 router.post('/', async (req, res) => {
-    console.log("🛒 CHECKOUT TRIGGERED! Cart data:", req.body);
+    console.log("CHECKOUT TRIGGERED! Cart data:", req.body);
 
     try {
         // Grab the exact variables sent from register.html
         const { customer_id, total_amount, payment_method, items } = req.body;
         const employee_id = 1; // Default Cashier for now
 
-        // A. Create the main receipt in sales_transaction
         const newSale = await pool.query(
             `INSERT INTO sales_transaction (customer_id, employee_id, total) 
              VALUES ($1, $2, $3) 
@@ -39,7 +38,7 @@ router.post('/', async (req, res) => {
         );
         const transaction_id = newSale.rows[0].id;
 
-        // B. Award Loyalty Points! (1 point per 10 Rand)
+        // Award Loyalty Points! (1 point per 10 Rand)
         if (customer_id) {
             const pointsEarned = Math.floor(total_amount / 10);
             await pool.query(
@@ -50,8 +49,6 @@ router.post('/', async (req, res) => {
             );
             console.log(`🏆 Awarded ${pointsEarned} points to customer #${customer_id}`);
         }
-
-        // C. Loop through the cart items
         for (let item of items) {
             // Save line item to receipt
             await pool.query(
@@ -60,7 +57,6 @@ router.post('/', async (req, res) => {
                 [transaction_id, item.id, item.qty, item.price, (item.price * item.qty)]
             );
 
-            // Deduct the bought quantity from the inventory table
             await pool.query(
                 `UPDATE inventory 
                  SET quantity = quantity - $1 
@@ -69,7 +65,6 @@ router.post('/', async (req, res) => {
             );
         }
 
-        // D. Send Success back to the UI!
         res.json({ 
             message: "Sale completed successfully!", 
             receipt_number: transaction_id 
@@ -81,7 +76,6 @@ router.post('/', async (req, res) => {
     }
 });
 
-// 3. DELETE (Void) a sale and return items to stock
 router.delete('/:id', async (req, res) => {
     const receipt_id = req.params.id;
     console.log(`VOID TRIGGERED for Receipt #${receipt_id}`);

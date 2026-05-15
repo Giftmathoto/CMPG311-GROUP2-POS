@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db'); // Adjust this path if your db.js is located somewhere else!
+const pool = require('../db');
 
 // GET all employees for the frontend dashboard
 router.get('/', async (req, res) => {

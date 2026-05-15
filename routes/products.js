@@ -73,13 +73,10 @@ router.delete('/:id', async (req, res) => {
     console.log(`DELETE TRIGGERED for Product #${product_id}`);
 
     try {
-        // 1. Delete the stock from the INVENTORY table first (to satisfy the bouncer)
         await pool.query('DELETE FROM inventory WHERE product_id = $1;', [product_id]);
 
-        // 2. Now delete the item from the main PRODUCT table
         const deleteResult = await pool.query('DELETE FROM product WHERE id = $1 RETURNING *;', [product_id]);
 
-        // 3. Check if the product actually existed
         if (deleteResult.rowCount === 0) {
             return res.status(404).json({ error: "Product not found." });
         }
@@ -89,7 +86,6 @@ router.delete('/:id', async (req, res) => {
     } catch (err) {
         console.error("DELETE PRODUCT ERROR:", err.message);
         
-        // 🚨 The Bouncer Check: Prevent deleting products that are on past receipts
         if (err.message.includes('transaction_item_product_id_fkey')) {
             return res.status(400).json({ 
                 error: "Cannot delete this product! It exists on a past sales receipt. You must void the sale first to protect your financial records." 
@@ -100,13 +96,12 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-// PUT update product (Self-Healing Version)
+// PUT update product
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const { name, price, stock } = req.body;
 
-        // 1. Update the main PRODUCT table
         const updateProduct = await pool.query(
             `UPDATE product SET product_name = $1, price = $2 WHERE id = $3 RETURNING id, product_name AS name, price;`,
             [name, price, id]
@@ -116,13 +111,11 @@ router.put('/:id', async (req, res) => {
             return res.status(404).json({ error: "Product not found in database" });
         }
 
-        // 2. Try to update the INVENTORY table
         let updateInventory = await pool.query(
             `UPDATE inventory SET quantity = $1 WHERE product_id = $2 RETURNING quantity AS stock;`,
             [stock, id]
         );
 
-        // 🚨 3. The Self-Healing Check: If the row was missing, INSERT it!
         if (updateInventory.rows.length === 0) {
             console.log(`🔧 Healing missing inventory record for Product #${id}`);
             updateInventory = await pool.query(
