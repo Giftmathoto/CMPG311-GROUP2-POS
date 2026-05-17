@@ -80,47 +80,41 @@ router.post('/', async (req, res) => {
   try {
     const { name, price, stock } = req.body;
 
-    if (!name || price === undefined || price === null || price === '') {
+    if (!name || price === undefined || price === null) {
       return res.status(400).json({ error: 'Product name and price are required' });
     }
 
+    const productName = name.trim();
     const productPrice = Number(price);
     const qtyToAdd = Number(stock || 0);
 
-    if (!Number.isFinite(productPrice) || productPrice < 0) {
-      return res.status(400).json({ error: 'Product price must be a valid non-negative number' });
-    }
-
-    if (!Number.isFinite(qtyToAdd) || qtyToAdd < 0) {
-      return res.status(400).json({ error: 'Stock quantity must be a valid non-negative number' });
-    }
-
     await client.query('BEGIN');
 
-    const existingProduct = await client.query(`
-      SELECT
+    // Same name + same price = same product
+    const existing = await client.query(`
+      SELECT 
         product_id AS id,
         product_name AS name,
         price,
         barcode AS sku
       FROM product
       WHERE LOWER(TRIM(product_name)) = LOWER(TRIM($1))
-        AND price = $2
+      AND price = $2
       LIMIT 1;
-    `, [name, productPrice]);
+    `, [productName, productPrice]);
 
-    if (existingProduct.rows.length > 0) {
-      const product = existingProduct.rows[0];
+    if (existing.rows.length > 0) {
+      const product = existing.rows[0];
 
-      let inventoryResult = await client.query(`
+      let inventory = await client.query(`
         UPDATE inventory
         SET stock_quantity = stock_quantity + $1
         WHERE product_id = $2
         RETURNING stock_quantity AS stock;
       `, [qtyToAdd, product.id]);
 
-      if (inventoryResult.rows.length === 0) {
-        inventoryResult = await client.query(`
+      if (inventory.rows.length === 0) {
+        inventory = await client.query(`
           INSERT INTO inventory (product_id, stock_quantity)
           VALUES ($1, $2)
           RETURNING stock_quantity AS stock;
@@ -131,12 +125,15 @@ router.post('/', async (req, res) => {
 
       return res.json({
         ...product,
-        stock: inventoryResult.rows[0].stock,
+        stock: inventory.rows[0].stock,
         message: 'Existing product quantity increased'
       });
     }
 
-    const productResult = await client.query(`
+    // Different name OR same name with different price = new row
+    const barcode = `${productName.substring(0, 3).toUpperCase()}-${Date.now()}`;
+
+    const newProduct = await client.query(`
       INSERT INTO product
       (product_name, description, price, barcode, category_id, supplier_id)
       VALUES ($1, $2, $3, $4, 1, 1)
@@ -146,15 +143,15 @@ router.post('/', async (req, res) => {
         price,
         barcode AS sku;
     `, [
-      name,
+      productName,
       'New product',
       productPrice,
-      generateBarcode(name)
+      barcode
     ]);
 
-    const product = productResult.rows[0];
+    const product = newProduct.rows[0];
 
-    const inventoryResult = await client.query(`
+    const inventory = await client.query(`
       INSERT INTO inventory
       (product_id, stock_quantity)
       VALUES ($1, $2)
@@ -163,11 +160,12 @@ router.post('/', async (req, res) => {
 
     await client.query('COMMIT');
 
-    res.status(201).json({
+    res.json({
       ...product,
-      stock: inventoryResult.rows[0].stock,
+      stock: inventory.rows[0].stock,
       message: 'New product added'
     });
+
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('ADD PRODUCT ERROR:', err.message);
@@ -179,38 +177,41 @@ router.post('/', async (req, res) => {
 
 // DELETE product and its inventory row
 router.delete('/:id', async (req, res) => {
-  const client = await pool.connect();
-
   try {
     const { id } = req.params;
 
-    await client.query('BEGIN');
+    const used = await pool.query(`
+      SELECT item_id
+      FROM transaction_item
+      WHERE product_id = $1
+      LIMIT 1;
+    `, [id]);
 
-    await client.query('DELETE FROM inventory WHERE product_id = $1;', [id]);
+    if (used.rows.length > 0) {
+      return res.status(400).json({
+        error: 'Cannot delete this product because it exists in a completed sale. Sales history must be preserved.'
+      });
+    }
 
-    const result = await client.query(`
+    await pool.query('DELETE FROM inventory WHERE product_id = $1;', [id]);
+
+    const result = await pool.query(`
       DELETE FROM product
       WHERE product_id = $1
       RETURNING product_id;
     `, [id]);
 
     if (result.rowCount === 0) {
-      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    await client.query('COMMIT');
-
     res.json({ message: 'Product deleted successfully' });
+
   } catch (err) {
-    await client.query('ROLLBACK');
     console.error('DELETE PRODUCT ERROR:', err.message);
     res.status(500).json({ error: err.message });
-  } finally {
-    client.release();
   }
 });
-
 // UPDATE product
 router.put('/:id', async (req, res) => {
   const client = await pool.connect();
