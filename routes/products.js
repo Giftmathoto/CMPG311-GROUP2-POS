@@ -180,19 +180,6 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const used = await pool.query(`
-      SELECT item_id
-      FROM transaction_item
-      WHERE product_id = $1
-      LIMIT 1;
-    `, [id]);
-
-    if (used.rows.length > 0) {
-      return res.status(400).json({
-        error: 'Cannot delete this product because it exists in a completed sale. Sales history must be preserved.'
-      });
-    }
-
     await pool.query('DELETE FROM inventory WHERE product_id = $1;', [id]);
 
     const result = await pool.query(`
@@ -205,7 +192,7 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    res.json({ message: 'Product deleted successfully' });
+    res.json({ message: 'Product deleted successfully. Receipt history preserved.' });
 
   } catch (err) {
     console.error('DELETE PRODUCT ERROR:', err.message);
