@@ -8,14 +8,12 @@ router.get('/', async (req, res) => {
     const result = await pool.query(`
       SELECT
         c.customer_id AS id,
-        c.first_name,
-        c.last_name,
         CONCAT(c.first_name, ' ', c.last_name) AS name,
         c.email,
         c.phone,
         'LOY-' || LPAD(c.customer_id::text, 5, '0') AS loyalty_id,
 
-        COALESCE(SUM(ti.quantity), 0) AS loyalty_points,
+        COALESCE(SUM(ti.quantity), 0)::int AS loyalty_points,
 
         CASE
           WHEN COALESCE(SUM(ti.quantity), 0) BETWEEN 1 AND 5 THEN 'Bronze'
@@ -25,19 +23,15 @@ router.get('/', async (req, res) => {
         END AS loyalty_tier
 
       FROM customer c
-
       LEFT JOIN sales_transaction st
         ON c.customer_id = st.customer_id
-
       LEFT JOIN transaction_item ti
         ON st.transaction_id = ti.transaction_id
-
       GROUP BY c.customer_id
       ORDER BY c.customer_id DESC;
     `);
 
     res.json(result.rows);
-
   } catch (err) {
     console.error('GET LOYALTY ERROR:', err.message);
     res.status(500).json({ error: err.message });

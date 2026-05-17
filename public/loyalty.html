@@ -54,8 +54,16 @@
 
     <table>
       <thead>
-        <tr><th>ID</th><th>Customer</th><th>Points</th><th>Status</th></tr>
-      </thead>
+  <tr>
+    <th>ID</th>
+    <th>Customer</th>
+    <th>Loyalty ID</th>
+    <th>Points</th>
+    <th>Tier</th>
+    <th>Email</th>
+    <th>Phone</th>
+  </tr>
+</thead>
       <tbody id="table-body">
         <tr><td colspan="4" class="empty-state">Loading records…</td></tr>
       </tbody>
@@ -81,15 +89,18 @@ function renderTable(data) {
     tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No records found</td></tr>';
     return;
   }
-
-  tbody.innerHTML = data.map(item => `
-    <tr>
-      <td class="id-cell">#${value(item, ['id', 'loyalty_id', 'transaction_id'])}</td>
-      <td>${value(item, ['name', 'customer', 'customer_name', 'employee_name'])}</td>
-      <td>${value(item, ['total', 'price', 'email', 'role', 'points', 'loyalty_points'])}</td>
-      <td>${value(item, ['payment_method', 'status', 'stock'])}</td>
-    </tr>
-  `).join('');
+   
+  tbody.innerHTML = loyalty.map(c => `
+  <tr>
+    <td>#${c.id}</td>
+    <td>${c.name || '—'}</td>
+    <td>${c.loyalty_id || '—'}</td>
+    <td>${Number(c.loyalty_points || 0)}</td>
+    <td>${c.loyalty_tier || 'No Tier'}</td>
+    <td>${c.email || '—'}</td>
+    <td>${c.phone || '—'}</td>
+  </tr>
+`).join('');
 }
 
 function filterTable() {
