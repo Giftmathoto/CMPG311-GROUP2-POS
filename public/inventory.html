@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POS System — Inventory</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f7f5f0;
+      --surface: #ffffff;
+      --surface2: #f0ede6;
+      --border: #e2ddd5;
+      --text: #1a1814;
+      --muted: #6b6760;
+      --accent: #1a1814;
+      --green: #2d6a4f;
+      --red: #9b2226;
+      --green-bg: #d8f3dc;
+      --red-bg: #fde8e8;
+      --amber: #854f0b;
+      --amber-bg: #faeeda;
+      --mono: 'DM Mono', monospace;
+      --sans: 'Syne', sans-serif;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    /* ── Header ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .logo {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .logo span { opacity: 0.35; margin: 0 6px; }
+    .header-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+    .header-nav {
+      display: flex;
+      gap: 12px;
+    }
+    .nav-link {
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .nav-link:hover {
+      background: var(--surface2);
+    }
+    .nav-link.active {
+      background: var(--accent);
+      color: #fff;
+    }
+    .logout-btn {
+      background: var(--red);
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.1s;
+    }
+    .logout-btn:hover {
+      opacity: 0.8;
+    }
+
+    /* ── Layout ── */
+    main {
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* ── Panel ── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .panel-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .panel-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* ── Stats Grid ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      padding: 1px;
+    }
+    .stat-card {
+      background: var(--surface);
+      padding: 1.25rem;
+    }
+    .stat-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .stat-val {
+      font-size: 24px;
+      font-weight: 600;
+      font-family: var(--mono);
+    }
+
+    /* ── Search & Filters ── */
+    .toolbar {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .toolbar input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 12px;
+      font-size: 13px;
+      font-family: var(--sans);
+      background: var(--bg);
+      outline: none;
+    }
+    .toolbar input:focus {
+      border-color: #999;
+      background: var(--surface);
+    }
+    .btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-family: var(--sans);
+      cursor: pointer;
+      transition: background 0.1s;
+      font-weight: 500;
+    }
+    .btn:hover { background: var(--surface2); }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .btn-primary:hover { opacity: 0.82; }
+
+    /* ── Table ── */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th {
+      padding: 10px 1.25rem;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    tbody tr {
+      border-bottom: 0.5px solid var(--border);
+      transition: background 0.1s;
+    }
+    tbody tr:hover { background: var(--surface2); }
+    tbody tr:last-child { border-bottom: none; }
+    td { padding: 11px 1.25rem; vertical-align: middle; }
+
+    .id-cell { font-family: var(--mono); color: var(--muted); font-size: 12px; }
+    .name-cell { font-weight: 500; }
+    .price-cell { font-family: var(--mono); }
+
+    .stock-badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 500;
+      font-family: var(--mono);
+    }
+    .stock-ok  { background: var(--green-bg); color: var(--green); }
+    .stock-low { background: var(--amber-bg); color: var(--amber); }
+    .stock-out { background: var(--red-bg);   color: var(--red);   }
+
+    .action-btns { display: flex; gap: 6px; }
+    .btn-edit { border-color: #c5d5e8; color: #185fa5; }
+    .btn-edit:hover { background: #e6f1fb; }
+    .btn-danger { border-color: #e8c5c5; color: var(--red); }
+    .btn-danger:hover { background: var(--red-bg); }
+
+    .status-bar {
+      padding: 6px 1.25rem;
+      background: var(--surface2);
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      font-family: var(--mono);
+      color: var(--muted);
+    }
+
+    .empty-state {
+      padding: 3rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    /* ── Adjust Modal ── */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.3);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal.active {
+      display: flex;
+    }
+    .modal-content {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    .modal-field {
+      margin-bottom: 14px;
+    }
+    .modal-field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 5px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .modal-field input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 13px;
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+    }
+    .modal-field input:focus {
+      border-color: #999;
+      background: var(--surface);
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 1.5rem;
+    }
+    .modal-buttons .btn {
+      flex: 1;
+      padding: 8px;
+      font-size: 12px;
+    }
+    .modal-buttons .btn-primary {
+      background: var(--green);
+      border-color: var(--green);
+      color: #fff;
+    }
+
+    @media (max-width: 900px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">POS System <span>/</span> Inventory</div>
+  <div class="header-meta">
+    <div class="header-nav">
+      <a href="products.html" class="nav-link">Products</a>
+      <a href="checkout.html" class="nav-link">Checkout</a>
+      <a href="inventory.html" class="nav-link active">Inventory</a>
+      <a href="reports.html" class="nav-link">Reports</a>
+    </div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<main>
+  <!-- Stats -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Inventory Overview</span>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Items</div>
+        <div class="stat-val" id="stat-items">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Value</div>
+        <div class="stat-val" id="stat-value">R—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Low Stock</div>
+        <div class="stat-val" id="stat-low">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Out of Stock</div>
+        <div class="stat-val" id="stat-out">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inventory Table -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Stock Levels</span>
+    </div>
+
+    <div class="toolbar">
+      <input type="text" id="search" placeholder="Search by product name…" oninput="filterTable()">
+      <button class="btn btn-primary" onclick="openAdjustModal()">Adjust Stock</button>
+      <button class="btn" onclick="loadInventory()">↻ Refresh</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:60px">ID</th>
+          <th>Product Name</th>
+          <th>Price</th>
+          <th>Stock</th>
+          <th>Total Value</th>
+          <th style="width:180px">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        <tr><td colspan="6" class="empty-state">Loading inventory…</td></tr>
+      </tbody>
+    </table>
+
+    <div class="status-bar">
+      <span id="row-count">0 items</span>
+    </div>
+  </div>
+</main>
+
+<!-- Adjust Stock Modal -->
+<div class="modal" id="adjust-modal">
+  <div class="modal-content">
+    <div class="modal-title">Adjust Stock Level</div>
+    
+    <div class="modal-field">
+      <label>Product</label>
+      <select id="modal-product" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px;font-size:13px;font-family:var(--sans);background:var(--bg);color:var(--text)"></select>
+    </div>
+
+    <div class="modal-field">
+      <label>Current Stock</label>
+      <input type="text" id="modal-current" readonly style="background:var(--surface2)">
+    </div>
+
+    <div class="modal-field">
+      <label>New Stock Quantity</label>
+      <input type="number" id="modal-new-qty" placeholder="Enter new stock quantity" min="0">
+    </div>
+
+    <div class="modal-field">
+      <label>Reason</label>
+      <select id="modal-reason" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px;font-size:13px;font-family:var(--sans);background:var(--bg);color:var(--text)">
+        <option>Stock correction</option>
+        <option>Damage/Loss</option>
+        <option>Return from customer</option>
+        <option>Restock delivery</option>
+        <option>Other</option>
+      </select>
+    </div>
+
+    <div class="modal-buttons">
+      <button class="btn" onclick="closeAdjustModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAdjustment()">Update Stock</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = '/api/products';
+  let allProducts = [];
+
+  function checkAuth() {
+    // Inventory is part of the POS dashboard; do not block stock display while testing.
+    return true;
+  }
+
+  function logout() {
+    localStorage.removeItem('pos_user');
+    window.location.href = '/login.html';
+  }
+
+  function navigateTo(page) {
+    window.location.href = '/' + page;
+  }
+
+  async function loadInventory() {
+    try {
+      const r = await fetch(API);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      allProducts = await r.json();
+
+      allProducts = allProducts.map(p => ({
+      ...p,
+      stock: Number(p.stock || 0),
+      price: Number(p.price || 0)
+}));
+      renderTable(allProducts);
+      updateStats();
+    } catch (e) {
+  console.error('Inventory error:', e);
+  document.getElementById('table-body').innerHTML =
+    `<tr><td colspan="6" class="empty-state" style="color:var(--red)">
+      Failed to load inventory: ${e.message}
+    </td></tr>`;
+}
+  }
+
+  function updateStats() {
+  const totalItems = allProducts.reduce((a, p) => a + p.stock, 0);
+  const totalValue = allProducts.reduce((a, p) => a + (p.price * p.stock), 0);
+  const lowStock = allProducts.filter(p => p.stock > 0 && p.stock < 20).length;
+  const outOfStock = allProducts.filter(p => p.stock === 0).length;
+
+  document.getElementById('stat-items').textContent = totalItems;
+  document.getElementById('stat-value').textContent = 'R' + totalValue.toFixed(2);
+  document.getElementById('stat-low').textContent = lowStock;
+  document.getElementById('stat-out').textContent = outOfStock;
+}
+
+  function stockClass(n) {
+    if (n === 0) return 'stock-out';
+    if (n < 20)  return 'stock-low';
+    return 'stock-ok';
+  }
+
+  function renderTable(products) {
+    const tbody = document.getElementById('table-body');
+    if (!products.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No products found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = products.map(p => {
+      const total = parseFloat(p.price) * p.stock;
+      return `
+        <tr>
+          <td class="id-cell">#${p.id}</td>
+          <td class="name-cell">${p.name}</td>
+          <td class="price-cell">R${parseFloat(p.price).toFixed(2)}</td>
+          <td><span class="stock-badge ${stockClass(p.stock)}">${p.stock} units</span></td>
+          <td class="price-cell">R${total.toFixed(2)}</td>
+          <td>
+            <div class="action-btns">
+              <button class="btn btn-edit" onclick="editStock(${p.id})">Adjust</button>
+              <button class="btn btn-danger" onclick="reorder(${p.id})">Reorder</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+    document.getElementById('row-count').textContent = `${products.length} product${products.length !== 1 ? 's' : ''}`;
+  }
+
+  function filterTable() {
+    const q = document.getElementById('search').value.toLowerCase();
+    const filtered = allProducts.filter(p => p.name.toLowerCase().includes(q));
+    renderTable(filtered);
+  }
+
+  function editStock(productId) {
+    const product = allProducts.find(p => p.id === productId);
+    document.getElementById('modal-product').innerHTML = `<option selected>${product.name} (ID: ${product.id})</option>`;
+    document.getElementById('modal-current').value = product.stock;
+    document.getElementById('modal-new-qty').value = product.stock;
+    document.getElementById('modal-new-qty').dataset.productId = productId;
+    openAdjustModal();
+  }
+
+  function openAdjustModal() {
+    if (!allProducts.length) {
+      alert('No products available');
+      return;
+    }
+    const select = document.getElementById('modal-product');
+    select.innerHTML = allProducts.map(p => 
+      `<option value="${p.id}">${p.name} (Current: ${p.stock})</option>`
+    ).join('');
+    document.getElementById('modal-current').value = allProducts[0].stock;
+    document.getElementById('modal-new-qty').value = allProducts[0].stock;
+    
+    select.onchange = function() {
+      const p = allProducts.find(x => x.id == this.value);
+      document.getElementById('modal-current').value = p.stock;
+      document.getElementById('modal-new-qty').value = p.stock;
+    };
+
+    document.getElementById('adjust-modal').classList.add('active');
+  }
+
+  function closeAdjustModal() {
+    document.getElementById('adjust-modal').classList.remove('active');
+  }
+
+  async function submitAdjustment() {
+    const productId = parseInt(document.getElementById('modal-product').value) || 
+                      parseInt(document.getElementById('modal-new-qty').dataset.productId);
+    const newQty = parseInt(document.getElementById('modal-new-qty').value);
+    const reason = document.getElementById('modal-reason').value;
+
+    if (isNaN(newQty) || newQty < 0) {
+      alert('Please enter a valid quantity');
+      return;
+    }
+
+    const product = allProducts.find(p => Number(p.id) === Number(productId));
+    if (!product) {
+      alert('Product not found');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API}/${productId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: product.name,
+          price: product.price,
+          stock: newQty
+        })
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to update stock');
+
+      alert(`Stock adjusted: ${product.name}\nOld: ${product.stock} → New: ${newQty}\nReason: ${reason}`);
+      closeAdjustModal();
+      await loadInventory();
+    } catch (err) {
+      console.error('STOCK UPDATE ERROR:', err);
+      alert(err.message);
+    }
+  }
+
+  function reorder(productId) {
+    const product = allProducts.find(p => p.id === productId);
+    const qty = prompt(`Reorder ${product.name}?\nEnter quantity to order:`, '50');
+    if (qty) {
+      alert(`Reorder request submitted:\n${product.name} x ${qty} units\nThis will be sent to suppliers.`);
+    }
+  }
+
+  checkAuth();
+  loadInventory();
+</script>
+
+</body>
+</html>

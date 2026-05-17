@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POS System — Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f7f5f0;
+      --surface: #ffffff;
+      --surface2: #f0ede6;
+      --border: #e2ddd5;
+      --text: #1a1814;
+      --muted: #6b6760;
+      --accent: #1a1814;
+      --green: #2d6a4f;
+      --red: #9b2226;
+      --mono: 'DM Mono', monospace;
+      --sans: 'Syne', sans-serif;
+    }
+    
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 380px;
+      padding: 2.5rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .login-header h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .login-header p {
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 6px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .field input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+      transition: border 0.15s;
+    }
+
+    .field input:focus {
+      border-color: #999;
+      background: var(--surface);
+    }
+
+    .remember-checkbox {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      font-size: 12px;
+    }
+
+    .remember-checkbox input {
+      margin-right: 8px;
+      cursor: pointer;
+    }
+
+    .btn-login {
+      width: 100%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 11px;
+      font-size: 13px;
+      font-family: var(--sans);
+      font-weight: 500;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: opacity 0.15s;
+    }
+
+    .btn-login:hover {
+      opacity: 0.82;
+    }
+
+    .btn-login:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .error-msg {
+      display: none;
+      background: #fde8e8;
+      border: 1px solid #e8c5c5;
+      color: #9b2226;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-bottom: 16px;
+    }
+
+    .success-msg {
+      display: none;
+      background: #d8f3dc;
+      border: 1px solid #95d5b2;
+      color: #2d6a4f;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-bottom: 16px;
+    }
+
+    .footer-text {
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 16px;
+    }
+
+    .footer-text a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .footer-text a:hover {
+      text-decoration: underline;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-container">
+  <div class="login-header">
+    <h1>POS System</h1>
+    <p>Administrator Login</p>
+  </div>
+
+  <div class="success-msg" id="success-msg"></div>
+  <div class="error-msg" id="error-msg"></div>
+
+  <form id="login-form" onsubmit="handleLogin(event)">
+    <div class="field">
+      <label for="username">Username</label>
+      <input type="text" id="username" placeholder="Enter your username" required autocomplete="username">
+    </div>
+
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password">
+    </div>
+
+    <div class="remember-checkbox">
+      <input type="checkbox" id="remember" name="remember">
+      <label for="remember" style="margin: 0; text-transform: none; letter-spacing: 0; color: var(--text);">Remember me</label>
+    </div>
+
+    <button type="submit" class="btn-login" id="login-btn">Login</button>
+  </form>
+
+  <div class="footer-text">
+    Don't have an account? <a href="/register.html">Register here</a>
+  </div>
+</div>
+
+<script>
+  const API_URL = '/api/auth';
+
+  // Check if already logged in
+  if (localStorage.getItem('pos_user')) {
+    window.location.href = '/products.html';
+  }
+
+  async function handleLogin(event) {
+    event.preventDefault();
+    
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const remember = document.getElementById('remember').checked;
+    const loginBtn = document.getElementById('login-btn');
+    const errorDiv = document.getElementById('error-msg');
+    const successDiv = document.getElementById('success-msg');
+
+    // Clear messages
+    errorDiv.style.display = 'none';
+    successDiv.style.display = 'none';
+
+    if (!username || !password) {
+      showError('Please enter both username and password');
+      return;
+    }
+
+    // Disable button and show loading
+    loginBtn.disabled = true;
+    const originalText = loginBtn.textContent;
+    loginBtn.innerHTML = '<span class="loading"></span> Logging in...';
+
+    try {
+      const response = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, password })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Store user session
+        localStorage.setItem('pos_user', JSON.stringify({
+          id: data.user.id,
+          username: data.user.username,
+          loginTime: new Date().toISOString()
+        }));
+        
+        if (remember) {
+          localStorage.setItem('pos_remember', 'true');
+        }
+        
+        // Show success message
+        showSuccess('Login successful! Redirecting...');
+        
+        // Redirect after delay
+        setTimeout(() => {
+          window.location.href = '/products.html';
+        }, 1000);
+      } else {
+        const error = await response.json();
+        showError(error.error || 'Login failed');
+      }
+    } catch (err) {
+      showError('Connection error: ' + err.message + '. Make sure the server is running');
+    } finally {
+      loginBtn.disabled = false;
+      loginBtn.textContent = originalText;
+    }
+  }
+
+  function showError(msg) {
+    const div = document.getElementById('error-msg');
+    div.textContent = '✕ ' + msg;
+    div.style.display = 'block';
+  }
+
+  function showSuccess(msg) {
+    const div = document.getElementById('success-msg');
+    div.textContent = '✓ ' + msg;
+    div.style.display = 'block';
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sales</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <a href="index.html">Dashboard</a>
+  <a href="products.html">Products</a>
+  <a href="sales.html">Sales</a>
+  <a href="register.html">Register Customer</a>
+  <a href="customers.html">Customers</a>
+  <a href="loyalty.html">Loyalty</a>
+</nav>
+
+<main class="container">
+  <h1>Sales Transaction</h1>
+
+  <label>Select Registered Customer</label>
+  <select id="customerSelect">
+    <option value="">-- Select customer --</option>
+  </select>
+
+  <p id="customerStatus" style="font-size:0.85rem;margin-top:8px;color:var(--muted);">Loading customers…</p>
+
+  <h2>Products</h2>
+  <div id="productsList"></div>
+
+  <h2>Cart</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Price</th>
+        <th>Qty</th>
+        <th>Subtotal</th>
+        <th>Remove</th>
+      </tr>
+    </thead>
+    <tbody id="cartTable"></tbody>
+  </table>
+
+  <h2>Total: R<span id="total">0.00</span></h2>
+
+  <button onclick="completeSale()">Complete Sale</button>
+
+  <div id="message"></div>
+</main>
+
+<script>
+const API_BASE = '/api';
+let products = [];
+let customers = [];
+let cart = [];
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+}
+
+async function loadCustomers() {
+  try {
+    const response = await fetch(`${API_BASE}/customers`, { cache: 'no-store' });
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to fetch customers');
+    }
+
+    customers = Array.isArray(data) ? data : [];
+
+    const select = document.getElementById('customerSelect');
+    const previousValue = select.value;
+    const lastRegistered = localStorage.getItem('pos_last_registered_customer_id');
+
+    select.innerHTML = '<option value="">-- Select customer --</option>';
+
+    customers.forEach(customer => {
+      const option = document.createElement('option');
+      option.value = customer.id;
+      option.textContent = `${customer.first_name || ''} ${customer.last_name || ''} (${customer.phone || 'No Phone'})`;
+      select.appendChild(option);
+    });
+
+    if (lastRegistered && customers.some(c => String(c.id) === String(lastRegistered))) {
+      select.value = lastRegistered;
+      localStorage.removeItem('pos_last_registered_customer_id');
+    } else if (previousValue && customers.some(c => String(c.id) === String(previousValue))) {
+      select.value = previousValue;
+    }
+
+    document.getElementById('customerStatus').textContent = `${customers.length} registered customer${customers.length !== 1 ? 's' : ''} loaded from database.`;
+  } catch (err) {
+    console.error('LOAD CUSTOMERS ERROR:', err);
+    document.getElementById('customerStatus').textContent = err.message;
+  }
+}
+
+async function loadProducts() {
+  try {
+    const response = await fetch(`${API_BASE}/products`, { cache: 'no-store' });
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to fetch products');
+    }
+
+    products = Array.isArray(data) ? data : [];
+
+    const container = document.getElementById('productsList');
+
+    if (!products.length) {
+      container.innerHTML = '<p>No products available.</p>';
+      return;
+    }
+
+    container.innerHTML = products.map(product => `
+      <div class="card">
+        <strong>${escapeHtml(product.name)}</strong><br>
+        SKU: ${escapeHtml(product.sku || 'N/A')}<br>
+        Price: R${Number(product.price || 0).toFixed(2)}<br>
+        Stock: ${Number(product.stock || 0)}<br>
+        <button onclick="addToCart(${Number(product.id)})">Add to Cart</button>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error('LOAD PRODUCTS ERROR:', err);
+    document.getElementById('productsList').innerHTML = `<p style="color:red;">${escapeHtml(err.message)}</p>`;
+  }
+}
+
+function addToCart(productId) {
+  const product = products.find(p => Number(p.id) === Number(productId));
+
+  if (!product || Number(product.stock || 0) <= 0) {
+    alert('Product is out of stock.');
+    return;
+  }
+
+  const existing = cart.find(item => Number(item.id) === Number(productId));
+
+  if (existing) {
+    if (existing.qty + 1 > Number(product.stock || 0)) {
+      alert('Cannot add more than available stock.');
+      return;
+    }
+    existing.qty += 1;
+  } else {
+    cart.push({
+      id: Number(product.id),
+      name: product.name,
+      price: Number(product.price || 0),
+      qty: 1
+    });
+  }
+
+  renderCart();
+}
+
+function removeFromCart(productId) {
+  cart = cart.filter(item => Number(item.id) !== Number(productId));
+  renderCart();
+}
+
+function renderCart() {
+  const table = document.getElementById('cartTable');
+  let total = 0;
+
+  table.innerHTML = cart.map(item => {
+    const subtotal = item.price * item.qty;
+    total += subtotal;
+
+    return `
+      <tr>
+        <td>${escapeHtml(item.name)}</td>
+        <td>R${item.price.toFixed(2)}</td>
+        <td>${item.qty}</td>
+        <td>R${subtotal.toFixed(2)}</td>
+        <td><button onclick="removeFromCart(${item.id})">Remove</button></td>
+      </tr>
+    `;
+  }).join('');
+
+  document.getElementById('total').innerText = total.toFixed(2);
+}
+
+async function completeSale() {
+  const customerId = document.getElementById('customerSelect').value;
+
+  if (!customerId) {
+    alert('Please register or select a customer before completing a sale.');
+    window.location.href = 'register.html';
+    return;
+  }
+
+  if (!cart.length) {
+    alert('Cart is empty.');
+    return;
+  }
+
+  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+  const saleData = {
+    customer_id: Number(customerId),
+    total_amount: total,
+    payment_method: 'Cash',
+    items: cart.map(item => ({
+      id: item.id,
+      qty: item.qty,
+      price: item.price
+    }))
+  };
+
+  try {
+    const response = await fetch(`${API_BASE}/sales`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(saleData)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Sale failed');
+    }
+
+    document.getElementById('message').innerHTML = `
+      <p style="color:green;">Sale completed successfully. Receipt #${result.receipt_number}</p>
+    `;
+
+    cart = [];
+    renderCart();
+    await Promise.all([loadProducts(), loadCustomers()]);
+  } catch (err) {
+    console.error('COMPLETE SALE ERROR:', err);
+    document.getElementById('message').innerHTML = `<p style="color:red;">${escapeHtml(err.message)}</p>`;
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  loadCustomers();
+  loadProducts();
+});
+
+window.addEventListener('focus', loadCustomers);
+setInterval(loadCustomers, 10000);
+</script>
+
+</body>
+</html>

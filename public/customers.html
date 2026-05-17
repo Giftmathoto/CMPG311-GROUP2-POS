@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POS System — Customers</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --green: #10b981;
+      --red: #ef4444;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f0f2f5;
+      font-family: 'Syne', sans-serif;
+      padding: 24px 32px;
+      color: #1a1f2e;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: -0.3px;
+      background: linear-gradient(135deg, #1e2a3a, #0f172a);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .logo span { color: #64748b; }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      background: white;
+      padding: 6px 14px;
+      border-radius: 60px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    nav a {
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #334155;
+      padding: 4px 10px;
+      border-radius: 40px;
+      transition: 0.2s;
+    }
+    nav a:hover { background: #eef2ff; color: #0f3b5c; }
+    nav a[href="customers.html"] { background: #eef2ff; }
+
+    .header-meta {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      background: #ffffffcc;
+      backdrop-filter: blur(2px);
+      padding: 4px 12px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 10px;
+      background: #2b9348;
+      display: inline-block;
+    }
+
+    .main-single {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 28px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.03), 0 2px 4px rgba(0,0,0,0.05);
+      padding: 1.5rem;
+      margin-bottom: 1.8rem;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+    }
+    .stat {
+      background: #f8fafc;
+      border-radius: 24px;
+      padding: 12px 18px;
+      flex: 1;
+      border: 1px solid #eef2ff;
+    }
+    .stat-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+      color: #475569;
+    }
+    .stat-val {
+      font-size: 1.8rem;
+      font-weight: 700;
+      font-family: 'DM Mono', monospace;
+      color: #0f172a;
+    }
+
+    .search-bar {
+      margin-bottom: 1.2rem;
+    }
+    .search-bar input {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 48px;
+      border: 1px solid #e2e8f0;
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    th {
+      text-align: left;
+      padding: 14px 8px 8px 0;
+      font-weight: 600;
+      color: #334155;
+      border-bottom: 1px solid #e2edf2;
+    }
+    td {
+      padding: 12px 8px 12px 0;
+      border-bottom: 1px solid #f0f2f5;
+      vertical-align: middle;
+    }
+    .id-cell { font-family: monospace; font-weight: 500; color: #4b5563; }
+
+    .action-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      background: transparent;
+      border: 1px solid #cbd5e1;
+      padding: 5px 12px;
+      border-radius: 30px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: 0.2s;
+      font-family: inherit;
+    }
+    .btn-edit { background: #f1f5f9; border-color: #cbd5e1; }
+    .btn-edit:hover { background: #e6edf5; }
+    .btn-danger { background: #fff5f5; border-color: #fecaca; color: #b91c1c; }
+    .btn-danger:hover { background: #fee2e2; border-color: #f87171; }
+
+    .form-mode-tag {
+      font-size: 0.6rem;
+      background: #e2e8f0;
+      padding: 2px 10px;
+      border-radius: 30px;
+    }
+    .tag-add { background: #dcfce7; color: #15803d; }
+    .tag-edit { background: #fff3e3; color: #b45309; }
+
+    .log-entry {
+      padding: 4px 0;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      border-bottom: 1px dashed #eef2ff;
+    }
+    .log-time { color: #64748b; margin-right: 8px; }
+    .log-ok { color: #10b981; }
+    .log-err { color: #ef4444; }
+
+    .empty-state { text-align: center; padding: 2rem; color: #94a3b8; }
+    .status-bar {
+      margin-top: 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: #5b6e8c;
+    }
+
+    input {
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      font-family: inherit;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .75rem;
+    }
+
+    @media (max-width: 768px) {
+      body { padding: 16px; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">POS System <span>/</span> Customers</div>
+  <nav>
+    <a href="index.html">Dashboard</a>
+    <a href="products.html">Products</a>
+    <a href="sales.html">Sales</a>
+    <a href="employees.html">Employees</a>
+    <a href="customers.html">Customers</a>
+    <a href="loyalty.html">Loyalty</a>
+  </nav>
+  <div class="header-meta">
+    <span class="dot" id="conn-dot"></span>
+    <span id="conn-label">database mode</span>
+  </div>
+</header>
+
+<main class="main-single">
+  <div style="display:flex;flex-direction:column;gap:1.5rem">
+
+    <!-- ADD / EDIT FORM PANEL -->
+    <div class="panel">
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem">
+        <h2 style="margin:0;font-size:1rem">Customer Form</h2>
+        <span id="form-tag" class="form-mode-tag tag-add">ADD</span>
+      </div>
+      <div class="form-grid">
+        <input id="f-first-name" type="text" placeholder="First name *">
+        <input id="f-last-name"  type="text" placeholder="Last name *">
+        <input id="f-email"      type="email" placeholder="Email">
+        <input id="f-phone"      type="text" placeholder="Phone">
+        <input id="f-address"    type="text" placeholder="Address">
+        <input id="f-city"       type="text" placeholder="City">
+      </div>
+      <div style="display:flex;gap:.75rem;margin-top:.75rem">
+        <button class="btn btn-edit" onclick="submitForm()" id="submit-btn">Add Customer</button>
+        <button class="btn" onclick="resetForm()" id="cancel-btn" style="display:none">Cancel</button>
+      </div>
+    </div>
+
+    <!-- STATS + TABLE PANEL -->
+    <div class="panel">
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-label">Total Customers</div>
+          <div class="stat-val" id="s-total">—</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Storage Mode</div>
+          <div class="stat-val" id="s-status">DB</div>
+        </div>
+      </div>
+
+      <div class="search-bar">
+        <input type="text" id="search" placeholder="Search customers by name or email…" oninput="filterTable()">
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table style="min-width: 700px;">
+          <thead>
+            <tr>
+              <th style="width:60px">ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Loyalty ID</th>
+              <th>Address</th>
+              <th style="width:150px">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <tr><td colspan="7" class="empty-state">Loading customers…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="status-bar">
+        <span id="row-count">0 customers</span>
+        <span id="last-refresh">—</span>
+      </div>
+
+      <div id="log-section" style="margin-top:1rem;font-size:.75rem;"></div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+const API = '/api/customers';
+
+let allCustomers = [];
+let editingId = null;
+
+function ts() {
+  return new Date().toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+}
+
+function log(msg, type = '') {
+  const s = document.getElementById('log-section');
+  const e = document.createElement('div');
+  e.className = 'log-entry';
+  e.innerHTML = `<span class="log-time">${ts()}</span><span class="${type ? 'log-' + type : ''}">${msg}</span>`;
+  s.prepend(e);
+  const entries = s.querySelectorAll('.log-entry');
+  if (entries.length > 10) entries[entries.length - 1].remove();
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+}
+
+async function loadCustomers() {
+  try {
+    const res = await fetch(API, { cache: 'no-store' });
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to load customers');
+    }
+
+    allCustomers = Array.isArray(data) ? data : [];
+    document.getElementById('s-total').textContent = allCustomers.length;
+    document.getElementById('s-status').textContent = 'DB';
+    document.getElementById('conn-label').textContent = 'database mode';
+    document.getElementById('conn-dot').style.background = '#10b981';
+    filterTable();
+    log(`Customers loaded from database (${allCustomers.length})`, 'ok');
+  } catch (err) {
+    console.error('LOAD CUSTOMERS ERROR:', err);
+    document.getElementById('s-status').textContent = 'ERROR';
+    document.getElementById('conn-dot').style.background = '#ef4444';
+    document.getElementById('table-body').innerHTML = `<tr><td colspan="7" class="empty-state">${escapeHtml(err.message)}</td></tr>`;
+    log('Failed to load customers', 'err');
+  }
+}
+
+function renderTable(customers) {
+  const tbody = document.getElementById('table-body');
+
+  if (!customers.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No customers found</td></tr>';
+    document.getElementById('row-count').textContent = '0 customers';
+    document.getElementById('last-refresh').textContent = 'updated ' + ts();
+    return;
+  }
+
+  tbody.innerHTML = customers.map(c => `
+    <tr>
+      <td class="id-cell">#${c.id}</td>
+      <td><strong>${escapeHtml(c.first_name)} ${escapeHtml(c.last_name)}</strong></td>
+      <td>${escapeHtml(c.email || '—')}</td>
+      <td>${escapeHtml(c.phone || '—')}</td>
+      <td>${escapeHtml(c.loyalty_id || '—')}</td>
+      <td>${escapeHtml(c.address || '—')}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-edit" onclick="startEdit(${c.id})">Edit</button>
+          <button class="btn btn-danger" onclick="deleteCustomer(${c.id})">Delete</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+
+  document.getElementById('row-count').textContent = `${customers.length} customer${customers.length !== 1 ? 's' : ''}`;
+  document.getElementById('last-refresh').textContent = 'updated ' + ts();
+}
+
+function filterTable() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const filtered = allCustomers.filter(c =>
+    `${c.first_name || ''} ${c.last_name || ''}`.toLowerCase().includes(q) ||
+    String(c.email || '').toLowerCase().includes(q) ||
+    String(c.phone || '').toLowerCase().includes(q)
+  );
+  renderTable(filtered);
+}
+
+function startEdit(id) {
+  const c = allCustomers.find(x => Number(x.id) === Number(id));
+  if (!c) return;
+
+  editingId = id;
+  document.getElementById('f-first-name').value = c.first_name || '';
+  document.getElementById('f-last-name').value = c.last_name || '';
+  document.getElementById('f-email').value = c.email || '';
+  document.getElementById('f-phone').value = c.phone || '';
+  document.getElementById('f-address').value = c.address || '';
+  document.getElementById('f-city').value = c.city || '';
+  document.getElementById('submit-btn').textContent = 'Update Customer';
+  document.getElementById('cancel-btn').style.display = 'block';
+  document.getElementById('form-tag').textContent = 'EDIT';
+  document.getElementById('form-tag').className = 'form-mode-tag tag-edit';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function resetForm() {
+  editingId = null;
+  ['f-first-name','f-last-name','f-email','f-phone','f-address','f-city'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('submit-btn').textContent = 'Add Customer';
+  document.getElementById('cancel-btn').style.display = 'none';
+  document.getElementById('form-tag').textContent = 'ADD';
+  document.getElementById('form-tag').className = 'form-mode-tag tag-add';
+}
+
+async function submitForm() {
+  const payload = {
+    first_name: document.getElementById('f-first-name').value.trim(),
+    last_name: document.getElementById('f-last-name').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    phone: document.getElementById('f-phone').value.trim(),
+    address: document.getElementById('f-address').value.trim(),
+    city: document.getElementById('f-city').value.trim()
+  };
+
+  if (!payload.first_name || !payload.last_name) {
+    log('Please fill in first name and last name', 'err');
+    return;
+  }
+
+  try {
+    const url = editingId ? `${API}/${editingId}` : API;
+    const method = editingId ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to save customer');
+
+    log(editingId ? 'Customer updated in database' : 'Customer added to database', 'ok');
+    resetForm();
+    await loadCustomers();
+  } catch (err) {
+    console.error('SAVE CUSTOMER ERROR:', err);
+    log(err.message, 'err');
+    alert(err.message);
+  }
+}
+
+async function deleteCustomer(id) {
+  const c = allCustomers.find(x => Number(x.id) === Number(id));
+  const label = c ? `${c.first_name} ${c.last_name}` : 'customer';
+  if (!confirm(`Delete ${label}?`)) return;
+
+  try {
+    const res = await fetch(`${API}/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to delete customer');
+
+    if (editingId === id) resetForm();
+    log('Customer deleted from database', 'ok');
+    await loadCustomers();
+  } catch (err) {
+    console.error('DELETE CUSTOMER ERROR:', err);
+    log(err.message, 'err');
+    alert(err.message);
+  }
+}
+
+window.startEdit = startEdit;
+window.deleteCustomer = deleteCustomer;
+window.submitForm = submitForm;
+window.resetForm = resetForm;
+window.filterTable = filterTable;
+window.loadCustomers = loadCustomers;
+
+window.addEventListener('DOMContentLoaded', loadCustomers);
+window.addEventListener('focus', loadCustomers);
+</script>
+</body>
+</html>

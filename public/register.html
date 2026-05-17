@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>POS SYSTEM - Register Customer</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="logo">POS System <span>/</span> Register</div>
+  <nav>
+    <a href="index.html">Dashboard</a>
+    <a href="products.html">Products</a>
+    <a href="sales.html">Sales</a>
+    <a href="register.html">Register Customer</a>
+    <a href="employees.html">Employees</a>
+    <a href="customers.html">Customers</a>
+    <a href="loyalty.html">Loyalty</a>
+    <a href="inventory.html">Inventory</a>
+    <a href="reports.html">Reports</a>
+    <a href="login.html">Login</a>
+  </nav>
+  <div class="header-meta">
+    <span class="dot" id="conn-dot" style="background: var(--green);"></span>
+    <span>api: online/local</span>
+  </div>
+</header>
+
+<main class="main-single" style="display:grid;grid-template-columns:2fr 1fr;gap:20px">
+  <section class="panel">
+    <h1>Register Customer</h1>
+
+    <form id="customer-form" style="display:flex;flex-direction:column;gap:15px;margin-top:20px;">
+      <input type="text" id="customer-name" placeholder="Customer full name" required
+        style="padding:12px;background:#111;color:#fff;border:1px solid #333;border-radius:4px;font-family:'DM Mono',monospace;">
+
+      <input type="email" id="customer-email" placeholder="Customer email"
+        style="padding:12px;background:#111;color:#fff;border:1px solid #333;border-radius:4px;font-family:'DM Mono',monospace;">
+
+      <input type="text" id="customer-phone" placeholder="Customer phone number" required
+        style="padding:12px;background:#111;color:#fff;border:1px solid #333;border-radius:4px;font-family:'DM Mono',monospace;">
+
+      <textarea id="customer-address" placeholder="Customer address" rows="4"
+        style="padding:12px;background:#111;color:#fff;border:1px solid #333;border-radius:4px;resize:vertical;font-family:'DM Mono',monospace;"></textarea>
+
+      <input type="text" id="customer-city" placeholder="Customer city"
+        style="padding:12px;background:#111;color:#fff;border:1px solid #333;border-radius:4px;font-family:'DM Mono',monospace;">
+
+      <button type="submit"
+        style="padding:15px;background:#fff;color:#000;font-family:'Syne',sans-serif;font-size:16px;font-weight:600;border:none;border-radius:4px;cursor:pointer;transition:0.2s;">
+        REGISTER CUSTOMER
+      </button>
+    </form>
+
+    <div id="message" style="margin-top:20px;"></div>
+  </section>
+
+  <aside class="panel">
+    <h2>Registration Result</h2>
+    <p style="color:var(--muted);margin-top:10px;">A successful registration is saved directly to the database and becomes immediately available on the sales page, customers page, and dashboard.</p>
+  </aside>
+</main>
+
+<script>
+const API = '/api/customers';
+
+function splitFullName(fullName) {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  const first_name = parts.shift() || '';
+  const last_name = parts.length ? parts.join(' ') : 'Customer';
+  return { first_name, last_name };
+}
+
+document.getElementById('customer-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const fullName = document.getElementById('customer-name').value.trim();
+  const { first_name, last_name } = splitFullName(fullName);
+
+  const payload = {
+    first_name,
+    last_name,
+    email: document.getElementById('customer-email').value.trim(),
+    phone: document.getElementById('customer-phone').value.trim(),
+    address: document.getElementById('customer-address').value.trim(),
+    city: document.getElementById('customer-city').value.trim()
+  };
+
+  if (!payload.first_name || !payload.last_name) {
+    document.getElementById('message').innerHTML = '<p style="color:red;">Enter a valid customer name.</p>';
+    return;
+  }
+
+  try {
+    const response = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to register customer');
+    }
+
+    localStorage.setItem('pos_last_registered_customer_id', String(result.id));
+
+    document.getElementById('message').innerHTML = `
+      <p style="color:green;">
+        Customer registered successfully.<br>
+        Loyalty ID: <strong>${result.loyalty_id || 'LOY-' + String(result.id).padStart(5, '0')}</strong>
+      </p>
+      <p style="margin-top:10px;">
+        <a href="sales.html">Go to Sales</a> · <a href="customers.html">View Customers</a>
+      </p>
+    `;
+
+    document.getElementById('customer-form').reset();
+  } catch (err) {
+    console.error('REGISTER CUSTOMER ERROR:', err);
+    document.getElementById('message').innerHTML = `<p style="color:red;">${err.message}</p>`;
+  }
+});
+</script>
+</body>
+</html>
