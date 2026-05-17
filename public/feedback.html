@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POS System — Feedback</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f7f5f0;
+      --surface: #ffffff;
+      --surface2: #f0ede6;
+      --border: #e2ddd5;
+      --text: #1a1814;
+      --muted: #6b6760;
+      --accent: #1a1814;
+      --green: #2d6a4f;
+      --red: #9b2226;
+      --mono: 'DM Mono', monospace;
+      --sans: 'Syne', sans-serif;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 56px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .logo {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .logo span { opacity: 0.35; margin: 0 6px; }
+
+    .header-nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .nav-link {
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.1s;
+    }
+
+    .nav-link:hover { background: var(--surface2); }
+
+    .nav-link.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    main {
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    .panel-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .form-grid {
+      padding: 1.25rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    input, select, textarea {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      outline: none;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: #999;
+      background: var(--surface);
+    }
+
+    .btn {
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 12px;
+      font-family: var(--sans);
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .btn:hover { opacity: 0.82; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead th {
+      padding: 10px 1.25rem;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    td {
+      padding: 11px 1.25rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    tbody tr:hover { background: var(--surface2); }
+
+    .toolbar {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .toolbar input {
+      flex: 1;
+    }
+
+    .empty-state {
+      padding: 2rem;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .message {
+      padding: 1rem 1.25rem;
+      font-size: 13px;
+      display: none;
+    }
+
+    .message.ok { color: var(--green); }
+    .message.err { color: var(--red); }
+
+    @media (max-width: 800px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">POS System <span>/</span> Feedback</div>
+
+  <div class="header-nav">
+    <a href="index.html" class="nav-link">Dashboard</a>
+    <a href="products.html" class="nav-link">Products</a>
+    <a href="sales.html" class="nav-link">Sales</a>
+    <a href="customers.html" class="nav-link">Customers</a>
+    <a href="loyalty.html" class="nav-link">Loyalty</a>
+    <a href="inventory.html" class="nav-link">Inventory</a>
+    <a href="feedback.html" class="nav-link active">Feedback</a>
+  </div>
+</header>
+
+<main>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Customer Feedback Form</span>
+    </div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label>Customer</label>
+        <select id="customer-id">
+          <option value="">Select customer</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Product</label>
+        <select id="product-id">
+          <option value="">Select product</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Rating</label>
+        <select id="rating">
+          <option value="5">5 — Excellent</option>
+          <option value="4">4 — Good</option>
+          <option value="3">3 — Average</option>
+          <option value="2">2 — Poor</option>
+          <option value="1">1 — Very Poor</option>
+        </select>
+      </div>
+
+      <div class="field full">
+        <label>Comment</label>
+        <textarea id="comment" placeholder="Write customer feedback here..."></textarea>
+      </div>
+
+      <div class="field full">
+        <button class="btn" onclick="submitFeedback()">Submit Feedback</button>
+      </div>
+    </div>
+
+    <div id="message" class="message"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Feedback Records</span>
+      <button class="btn" onclick="loadFeedback()">Refresh</button>
+    </div>
+
+    <div class="toolbar">
+      <input id="search" type="text" placeholder="Search feedback..." oninput="filterFeedback()">
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Customer</th>
+          <th>Product</th>
+          <th>Rating</th>
+          <th>Comment</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody id="feedback-body">
+        <tr>
+          <td colspan="6" class="empty-state">Loading feedback...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+<script>
+const API = '/api';
+let allFeedback = [];
+
+function showMessage(text, type = 'ok') {
+  const message = document.getElementById('message');
+  message.textContent = text;
+  message.className = `message ${type}`;
+  message.style.display = 'block';
+
+  setTimeout(() => {
+    message.style.display = 'none';
+  }, 3000);
+}
+
+async function loadCustomers() {
+  const res = await fetch(`${API}/customers`);
+  const customers = await res.json();
+
+  const select = document.getElementById('customer-id');
+
+  select.innerHTML = '<option value="">Select customer</option>';
+
+  customers.forEach(c => {
+    select.innerHTML += `
+      <option value="${c.id}">
+        ${c.first_name} ${c.last_name}
+      </option>
+    `;
+  });
+}
+
+async function loadProducts() {
+  const res = await fetch(`${API}/products`);
+  const products = await res.json();
+
+  const select = document.getElementById('product-id');
+
+  select.innerHTML = '<option value="">Select product</option>';
+
+  products.forEach(p => {
+    select.innerHTML += `
+      <option value="${p.id}">
+        ${p.name}
+      </option>
+    `;
+  });
+}
+
+async function loadFeedback() {
+  try {
+    const res = await fetch(`${API}/feedback`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to load feedback');
+    }
+
+    allFeedback = data;
+    renderFeedback(allFeedback);
+
+  } catch (err) {
+    document.getElementById('feedback-body').innerHTML = `
+      <tr>
+        <td colspan="6" class="empty-state" style="color:var(--red)">
+          Could not load feedback: ${err.message}
+        </td>
+      </tr>
+    `;
+  }
+}
+
+function renderFeedback(feedback) {
+  const tbody = document.getElementById('feedback-body');
+
+  if (!feedback.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="empty-state">
+          No feedback records found
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = feedback.map(f => `
+    <tr>
+      <td>#${f.feedback_id}</td>
+      <td>${f.customer_name || '—'}</td>
+      <td>${f.product_name || '—'}</td>
+      <td>${'★'.repeat(Number(f.rating || 0))}</td>
+      <td>${f.comment || '—'}</td>
+      <td>${new Date(f.feedback_date).toLocaleString()}</td>
+    </tr>
+  `).join('');
+}
+
+function filterFeedback() {
+  const q = document.getElementById('search').value.toLowerCase();
+
+  const filtered = allFeedback.filter(f =>
+    String(f.customer_name || '').toLowerCase().includes(q) ||
+    String(f.product_name || '').toLowerCase().includes(q) ||
+    String(f.comment || '').toLowerCase().includes(q)
+  );
+
+  renderFeedback(filtered);
+}
+
+async function submitFeedback() {
+  const customer_id = document.getElementById('customer-id').value;
+  const product_id = document.getElementById('product-id').value;
+  const rating = document.getElementById('rating').value;
+  const comment = document.getElementById('comment').value.trim();
+
+  if (!customer_id || !product_id || !rating) {
+    showMessage('Customer, product, and rating are required', 'err');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customer_id,
+        product_id,
+        rating,
+        comment
+      })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to submit feedback');
+    }
+
+    document.getElementById('comment').value = '';
+
+    showMessage('Feedback submitted successfully', 'ok');
+
+    await loadFeedback();
+
+  } catch (err) {
+    showMessage(err.message, 'err');
+  }
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  await Promise.all([
+    loadCustomers(),
+    loadProducts(),
+    loadFeedback()
+  ]);
+});
+</script>
+
+</body>
+</html>
