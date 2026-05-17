@@ -64,7 +64,7 @@
     <th>Phone</th>
   </tr>
 </thead>
-      <tbody id="table-body">
+      <tbody id="loyalty-body">
         <tr><td colspan="4" class="empty-state">Loading records…</td></tr>
       </tbody>
     </table>
@@ -73,62 +73,53 @@
 
 <script>
 const API = '/api/loyalty';
-let allData = [];
+let loyalty = [];
 
-function value(item, keys) {
-  for (const key of keys) {
-    if (item[key] !== undefined && item[key] !== null) return item[key];
-  }
-  return '—';
-}
+async function loadLoyalty() {
+  const tbody = document.getElementById('loyalty-body');
 
-function renderTable(data) {
-  const tbody = document.getElementById('table-body');
-
-  if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No records found</td></tr>';
-    return;
-  }
-   
-  tbody.innerHTML = loyalty.map(c => `
-  <tr>
-    <td>#${c.id}</td>
-    <td>${c.name || '—'}</td>
-    <td>${c.loyalty_id || '—'}</td>
-    <td>${Number(c.loyalty_points || 0)}</td>
-    <td>${c.loyalty_tier || 'No Tier'}</td>
-    <td>${c.email || '—'}</td>
-    <td>${c.phone || '—'}</td>
-  </tr>
-`).join('');
-}
-
-function filterTable() {
-  const q = document.getElementById('search').value.toLowerCase();
-  const filtered = allData.filter(x => JSON.stringify(x).toLowerCase().includes(q));
-  renderTable(filtered);
-}
-
-async function loadData() {
   try {
-    const response = await fetch(API);
-    if (!response.ok) throw new Error('HTTP ' + response.status);
-    allData = await response.json();
+    const res = await fetch(API);
 
-    document.getElementById('s-total').textContent = allData.length;
-    document.getElementById('s-status').textContent = 'LIVE';
-    document.getElementById('conn-dot').style.background = 'var(--green)';
+    const data = await res.json();
 
-    renderTable(allData);
-  } catch (error) {
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to load loyalty');
+    }
+
+    loyalty = data;
+
+    document.getElementById('s-total').textContent = loyalty.length;
+    document.getElementById('s-status').textContent = 'ONLINE';
+
+    tbody.innerHTML = loyalty.map(c => `
+      <tr>
+        <td>#${c.id}</td>
+        <td>${c.name || '—'}</td>
+        <td>${c.loyalty_id || '—'}</td>
+        <td>${Number(c.loyalty_points || 0)}</td>
+        <td>${c.loyalty_tier || 'No Tier'}</td>
+        <td>${c.email || '—'}</td>
+        <td>${c.phone || '—'}</td>
+      </tr>
+    `).join('');
+
+  } catch (err) {
+    console.error('LOYALTY PAGE ERROR:', err);
+
     document.getElementById('s-status').textContent = 'OFFLINE';
-    document.getElementById('conn-dot').style.background = 'var(--red)';
-    document.getElementById('table-body').innerHTML =
-      '<tr><td colspan="4" class="empty-state" style="color:var(--red)">Could not connect to API</td></tr>';
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align:center;color:red;padding:2rem">
+          Could not connect to API: ${err.message}
+        </td>
+      </tr>
+    `;
   }
 }
 
-loadData();
+window.addEventListener('DOMContentLoaded', loadLoyalty);
 
 </script>
 
