@@ -219,74 +219,88 @@
 <script>
   const API_URL = '/api/auth';
 
-  // Check if already logged in
-  if (localStorage.getItem('pos_user')) {
-    window.location.href = '/products.html';
+  // Already logged in
+  if (localStorage.getItem('pos_employee')) {
+    window.location.href = '/index.html';
   }
 
   async function handleLogin(event) {
     event.preventDefault();
-    
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value;
-    const remember = document.getElementById('remember').checked;
-    const loginBtn = document.getElementById('login-btn');
-    const errorDiv = document.getElementById('error-msg');
-    const successDiv = document.getElementById('success-msg');
 
-    // Clear messages
+    const username =
+      document.getElementById('username').value.trim();
+
+    const password =
+      document.getElementById('password').value.trim();
+
+    const loginBtn =
+      document.getElementById('login-btn');
+
+    const errorDiv =
+      document.getElementById('error-msg');
+
+    const successDiv =
+      document.getElementById('success-msg');
+
     errorDiv.style.display = 'none';
     successDiv.style.display = 'none';
 
     if (!username || !password) {
-      showError('Please enter both username and password');
+      showError('Please enter username and password');
       return;
     }
 
-    // Disable button and show loading
     loginBtn.disabled = true;
-    const originalText = loginBtn.textContent;
-    loginBtn.innerHTML = '<span class="loading"></span> Logging in...';
+
+    const originalText = loginBtn.innerHTML;
+
+    loginBtn.innerHTML =
+      '<span class="loading"></span> Logging in...';
 
     try {
+
       const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({
+          username,
+          password
+        })
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Store user session
-        localStorage.setItem('pos_user', JSON.stringify({
-          id: data.user.id,
-          username: data.user.username,
-          loginTime: new Date().toISOString()
-        }));
-        
-        if (remember) {
-          localStorage.setItem('pos_remember', 'true');
-        }
-        
-        // Show success message
-        showSuccess('Login successful! Redirecting...');
-        
-        // Redirect after delay
-        setTimeout(() => {
-          window.location.href = '/products.html';
-        }, 1000);
-      } else {
-        const error = await response.json();
-        showError(error.error || 'Login failed');
+      const data = await response.json();
+
+      if (!response.ok) {
+        showError(data.error || 'Login failed');
+        return;
       }
+
+      // Save employee session
+      localStorage.setItem(
+        'pos_employee',
+        JSON.stringify(data.employee)
+      );
+
+      showSuccess('Login successful');
+
+      setTimeout(() => {
+        window.location.href = '/index.html';
+      }, 1000);
+
     } catch (err) {
-      showError('Connection error: ' + err.message + '. Make sure the server is running');
+
+      console.error('LOGIN ERROR:', err);
+
+      showError(
+        'Unable to connect to server'
+      );
+
     } finally {
+
       loginBtn.disabled = false;
-      loginBtn.textContent = originalText;
+      loginBtn.innerHTML = originalText;
     }
   }
 
