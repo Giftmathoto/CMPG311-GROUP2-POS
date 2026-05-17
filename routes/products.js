@@ -177,26 +177,43 @@ router.post('/', async (req, res) => {
 
 // DELETE product and its inventory row
 router.delete('/:id', async (req, res) => {
+  const client = await pool.connect();
+
   try {
     const { id } = req.params;
 
-    await pool.query('DELETE FROM inventory WHERE product_id = $1;', [id]);
+    await client.query('BEGIN');
 
-    const result = await pool.query(`
-      DELETE FROM product
-      WHERE product_id = $1
-      RETURNING product_id;
-    `, [id]);
+    // Remove inventory row first
+    await client.query(
+      `DELETE FROM inventory WHERE product_id = $1;`,
+      [id]
+    );
 
-    if (result.rowCount === 0) {
+    // Remove entire product row
+    const result = await client.query(
+      `DELETE FROM product WHERE product_id = $1 RETURNING product_id;`,
+      [id]
+    );
+
+    if (!result.rows.length) {
+      await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    res.json({ message: 'Product deleted successfully. Receipt history preserved.' });
+    await client.query('COMMIT');
+
+    res.json({
+      message: 'Product row deleted successfully',
+      id: result.rows[0].product_id
+    });
 
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error('DELETE PRODUCT ERROR:', err.message);
     res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
   }
 });
 // UPDATE product
